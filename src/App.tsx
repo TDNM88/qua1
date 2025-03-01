@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './styles.css';
-import Footer from './components/Footer'; // Import Footer component
+import Footer from './components/Footer';
 
 // Define types
 type TabType = 'img2img' | 'text2img';
