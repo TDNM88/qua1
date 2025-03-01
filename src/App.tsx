@@ -451,3 +451,4 @@ export default function CaslaQuartzImageGenerator() {
     </div>
   </div>
 );
+}
