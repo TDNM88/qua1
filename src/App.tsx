@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Footer from './components/Footer';
-import UsageGuide from './components/UsageGuide'; // Import UsageGuide
+import UsageGuide from './components/UsageGuide';
 
 // Define types
 type TabType = 'img2img' | 'text2img';
@@ -46,7 +46,7 @@ const PRODUCT_IMAGE_MAP: { [key: string]: string } = {
   "C4346 Luxe": `${process.env.PUBLIC_URL}/product_images/C4346.jpg`,
   "C4342 Casla Eternal": `${process.env.PUBLIC_URL}/product_images/C4342.jpg`,
   "C4221 Athena": `${process.env.PUBLIC_URL}/product_images/C4221.jpg`,
-  "C4255 спиной trực tiếpCalacatta Extra": `${process.env.PUBLIC_URL}/product_images/C4255.jpg`,
+  "C4255 Calacatta Extra": `${process.env.PUBLIC_URL}/product_images/C4255.jpg`,
 };
 
 export default function CaslaQuartzImageGenerator() {
@@ -422,11 +422,7 @@ export default function CaslaQuartzImageGenerator() {
           </header>
 
           <div className="tab-container">
-            <div className="info-box">
-              <p>Ứng dụng Trí tuệ nhân tạo giúp bạn trải nghiệm các mẫu sản phẩm đá thạch anh nhân tạo cao cấp và đa dạng của CaslaQuartz tại mọi không gian kiến trúc mà bạn muốn!</p>
-              <p>Các hình ảnh được tạo ra bởi ứng dụng này đều thuộc bản quyền của CaslaQuartz, vui lòng không sao chép và sử dụng với mục đích thương mại.</p>
-            </div>
-            <UsageGuide /> {/* Thêm UsageGuide ngay dưới phần info-box */}
+            <UsageGuide /> {/* Đã tích hợp info-box vào UsageGuide */}
             <div className="tab-buttons">
               <button
                 className={`tab-button ${activeTab === 'img2img' ? 'active' : ''}`}
@@ -540,8 +536,8 @@ export default function CaslaQuartzImageGenerator() {
             <div className="output-area">
               {(() => {
                 console.log('Rendering output-area, generatedImage:', generatedImage, 'loading:', loading);
-                if (loading) {
-                  return (
+                return generatedImage ? (
+                  loading ? (
                     <div className="flex flex-col items-center gap-4">
                       <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
                       <div className="w-full max-w-md">
@@ -554,23 +550,21 @@ export default function CaslaQuartzImageGenerator() {
                       </div>
                       <p className="text-gray-600 text-center">{quotes[currentQuote]}</p>
                     </div>
-                  );
-                }
-                if (generatedImage) {
-                  return (
+                  ) : (
                     <>
                       <img src={generatedImage} alt="Generated" className="generated-image" />
                       <a href={generatedImage} download="generated_image.png" className="download-button">
                         Tải ảnh về máy
                       </a>
                     </>
-                  );
-                }
-                return <div className="output-placeholder">Ảnh sẽ hiển thị ở đây sau khi tạo</div>;
+                  )
+                ) : (
+                  <div className="output-placeholder">Ảnh sẽ hiển thị ở đây sau khi tạo</div>
+                );
               })()}
             </div>
           </div>
-          <Footer /> {/* Giữ Footer component */}
+          <Footer />
         </div>
       </div>
     </div>

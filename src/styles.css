@@ -413,6 +413,27 @@ textarea:focus {
   transform: translateX(5px);
 }
 
+/* Nút mở rộng/thu gọn */
+.guide-expand-btn {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  margin: 1rem 0;
+  background: transparent;
+  color: #007bff;
+  border: 2px solid #007bff;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.guide-expand-btn:hover {
+  background: #007bff;
+  color: #fff;
+  transform: scale(1.05);
+}
+
 /* Đoạn kết thúc */
 .guide-footer {
   font-size: 0.95rem;
@@ -431,11 +452,21 @@ textarea:focus {
   text-decoration: underline;
 }
 
-.guide-container {
-  animation: fadeIn 0.8s ease-in-out;
+.guide-expand-btn::before {
+  content: '\25BC'; /* Mũi tên xuống khi mở rộng */
+  display: inline-block;
+  margin-right: 8px;
+}
+
+.guide-expand-btn[aria-expanded="true"]::before {
+  content: '\25B2'; /* Mũi tên lên khi thu gọn */
+}
+
+.guide-expanded-content {
+  animation: fadeIn 0.5s ease-in-out;
 }
 
 @keyframes fadeIn {
-  0% { opacity: 0; transform: translateY(10px); }
+  0% { opacity: 0; transform: translateY(-10px); }
   100% { opacity: 1; transform: translateY(0); }
 }
