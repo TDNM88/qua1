@@ -63,6 +63,15 @@ export default function CaslaQuartzImageGenerator() {
   const [progress, setProgress] = useState(0);
   const [currentQuote, setCurrentQuote] = useState(0);
 
+  const quotes = [
+    "Đá thạch anh mang lại sự sang trọng và bền bỉ cho mọi không gian.",
+    "Thiết kế đẹp bắt đầu từ những chi tiết nhỏ nhất.",
+    "CaslaQuartz - Sự lựa chọn hoàn hảo cho ngôi nhà hiện đại.",
+    "Mỗi viên đá là một câu chuyện về nghệ thuật và công nghệ.",
+    "Mẹo: Phối màu sáng với CaslaQuartz để làm nổi không gian.",
+    "Mẹo: Kết hợp nhiều mẫu đá để tạo điểm nhấn.",
+  ];
+
   const headers = {
     'Content-Type': 'application/json',
     Accept: 'application/json',
