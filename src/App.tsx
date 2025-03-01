@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './styles.css';
-import tams from 'tams-sdk';
 
 // Define types
 type TabType = 'img2img' | 'text2img';
@@ -61,6 +60,8 @@ export default function CaslaQuartzImageGenerator() {
   const [error, setError] = useState<string | null>(null);
   const [img2imgSelectedProducts, setImg2ImgSelectedProducts] = useState<Product[]>([]);
   const [text2imgSelectedProducts, setText2ImgSelectedProducts] = useState<Product[]>([]);
+  const [progress, setProgress] = useState(0);
+  const [currentQuote, setCurrentQuote] = useState(0);
 
   const headers = {
     'Content-Type': 'application/json',
@@ -71,63 +72,63 @@ export default function CaslaQuartzImageGenerator() {
   const uploadImageToTensorArt = async (imageData: string): Promise<string> => {
     const url = `${TENSOR_ART_API_URL}/resource/image`;
     const payload = JSON.stringify({ expireSec: 7200 });
-  
+
     const apiKey = process.env.REACT_APP_TENSOR_ART_API_KEY;
     if (!apiKey) {
       throw new Error('Missing API Key in .env');
     }
-  
+
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
       'Authorization': `Bearer ${apiKey}`,
     };
-  
+
     try {
       console.log('API Key:', apiKey);
       console.log('URL:', url);
       console.log('Headers:', headers);
       console.log('Payload:', payload);
-  
+
       const response = await fetch(url, {
         method: 'POST',
         headers,
         body: payload,
       });
-  
+
       const responseText = await response.text();
       console.log('Response:', response.status, responseText);
-  
+
       if (!response.ok) {
         throw new Error(`POST failed: ${response.status} - ${responseText}`);
       }
-  
+
       const resourceResponse = JSON.parse(responseText);
       const putUrl = resourceResponse.putUrl as string;
       const resourceId = resourceResponse.resourceId as string;
       const putHeaders = (resourceResponse.headers as Record<string, string>) || { 'Content-Type': 'image/jpeg' };
-  
+
       if (!putUrl || !resourceId) {
         throw new Error(`Invalid response: ${JSON.stringify(resourceResponse)}`);
       }
-  
+
       console.log('Put URL:', putUrl);
       const imageBlob = await (await fetch(imageData)).blob();
       console.log('Image Blob:', { size: imageBlob.size, type: imageBlob.type });
-  
+
       const putResponse = await fetch(putUrl, {
         method: 'PUT',
         headers: putHeaders,
         body: imageBlob,
       });
-  
+
       const putResponseText = await putResponse.text();
       console.log('PUT Response:', putResponse.status, putResponseText);
-  
+
       if (![200, 203].includes(putResponse.status)) {
         throw new Error(`PUT failed: ${putResponse.status} - ${putResponseText}`);
       }
-  
+
       await new Promise((resolve) => setTimeout(resolve, 10000));
       console.log('Upload successful - resourceId:', resourceId);
       return resourceId;
@@ -136,7 +137,7 @@ export default function CaslaQuartzImageGenerator() {
       throw error;
     }
   };
-  // Hàm kiểm tra trạng thái job
+
   const pollJobStatus = async (jobId: string): Promise<string> => {
     const maxAttempts = 36; // 3 phút với 5s mỗi lần kiểm tra
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
@@ -150,24 +151,23 @@ export default function CaslaQuartzImageGenerator() {
     throw new Error('Job timed out after 3 minutes');
   };
 
-  // Hàm render danh sách sản phẩm
   const renderProducts = (selectedProducts: Product[], setSelectedProducts: (products: Product[]) => void) => {
-  return PRODUCTS.map((product) => (
-    <button
-      key={product}
-      className={`product-button ${selectedProducts.includes(product) ? 'active' : ''}`}
-      onClick={() => {
-        setSelectedProducts(
-          selectedProducts.includes(product)
-            ? selectedProducts.filter((p) => p !== product)
-            : [...selectedProducts, product]
-        );
-      }}
-    >
-      {product}
-    </button>
-  ));
-};
+    return PRODUCTS.map((product) => (
+      <button
+        key={product}
+        className={`product-button ${selectedProducts.includes(product) ? 'active' : ''}`}
+        onClick={() => {
+          setSelectedProducts(
+            selectedProducts.includes(product)
+              ? selectedProducts.filter((p) => p !== product)
+              : [...selectedProducts, product]
+          );
+        }}
+      >
+        {product}
+      </button>
+    ));
+  };
 
   const switchTab = (tab: TabType) => {
     setActiveTab(tab);
@@ -197,22 +197,21 @@ export default function CaslaQuartzImageGenerator() {
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => e.preventDefault();
 
-  // Xử lý Img2Img
   const processImg2Img = async () => {
     if (!uploadedImage || img2imgSelectedProducts.length === 0) {
       setError('Vui lòng tải ảnh và chọn ít nhất một sản phẩm.');
       return;
     }
-  
+
     console.log('Starting processImg2Img, setting loading to true');
+    setGeneratedImage(null); // Reset để hiển thị loading
+    setProgress(0);
+    setCurrentQuote(0);
     setLoading(true);
-    setProgress(0); // Reset progress khi bắt đầu
-    setCurrentQuote(0); // Reset quote
     setError(null);
 
     try {
       const imageResourceId = await uploadImageToTensorArt(uploadedImage);
-      console.log('Image uploaded, resourceId:', imageResourceId);
       const selectedProduct = img2imgSelectedProducts[0];
       const textureFilePath = PRODUCT_IMAGE_MAP[selectedProduct];
       if (!textureFilePath) throw new Error(`Không tìm thấy ảnh sản phẩm cho ${selectedProduct}`);
@@ -297,18 +296,18 @@ export default function CaslaQuartzImageGenerator() {
     }
   };
 
-  // Xử lý Text2Img
   const processText2Img = async () => {
     if (!prompt || text2imgSelectedProducts.length === 0) {
       setError('Vui lòng nhập mô tả và chọn ít nhất một sản phẩm.');
       return;
     }
-  
+
     console.log('Starting processText2Img, setting loading to true');
+    setGeneratedImage(null); // Reset để hiển thị loading
+    setProgress(0);
+    setCurrentQuote(0);
     setLoading(true);
-    setProgress(0); // Reset progress khi bắt đầu
-    setCurrentQuote(0); // Reset quote
-    setError(null);  
+    setError(null);
 
     try {
       const [width, height] = text2ImgSize.split('x').map(Number);
@@ -350,18 +349,6 @@ export default function CaslaQuartzImageGenerator() {
     }
   };
 
-  const [progress, setProgress] = useState(0); // Tiến trình giả từ 0-100%
-  const [currentQuote, setCurrentQuote] = useState(0);
-
-  const quotes = [
-    "Đá thạch anh mang lại sự sang trọng và bền bỉ cho mọi không gian.",
-    "Thiết kế đẹp bắt đầu từ những chi tiết nhỏ nhất.",
-    "CaslaQuartz - Sự lựa chọn hoàn hảo cho ngôi nhà hiện đại.",
-    "Mỗi viên đá là một câu chuyện về nghệ thuật và công nghệ.",
-    "Mẹo: Phối màu sáng với CaslaQuartz để làm nổi không gian.",
-    "Mẹo: Kết hợp nhiều mẫu đá để tạo điểm nhấn.",
-  ];
-
   useEffect(() => {
     console.log('useEffect triggered, loading:', loading);
     let interval: NodeJS.Timeout;
@@ -386,161 +373,164 @@ export default function CaslaQuartzImageGenerator() {
     };
   }, [loading]);
 
+  console.log('Rendering CaslaQuartzImageGenerator');
   return (
-  <div className="app-container">
-    <div className="overlay">
-      <div className="content">
-        <header className="header">
-          <img src="logo.png" alt="Casla Quartz Logo" />
-          <h1>Đưa Kiệt Tác Vào Công Trình Của Bạn!</h1>
-        </header>
+    <div className="app-container">
+      <div className="overlay">
+        <div className="content">
+          <header className="header">
+            <img src="logo.png" alt="Casla Quartz Logo" />
+            <h1>Đưa Kiệt Tác Vào Công Trình Của Bạn!</h1>
+          </header>
 
-        <div className="tab-container">
-          <div className="info-box">
-            <p>Ứng dụng Trí tuệ nhân tạo giúp bạn trải nghiệm các mẫu sản phẩm đá thạch anh nhân tạo cao cấp và đa dạng của CaslaQuartz tại mọi không gian kiến trúc mà bạn muốn!</p>
-            <p>Các hình ảnh được tạo ra bởi ứng dụng này đều thuộc bản quyền của CaslaQuartz, vui lòng không sao chép và sử dụng với mục đích thương mại.</p>
+          <div className="tab-container">
+            <div className="info-box">
+              <p>Ứng dụng Trí tuệ nhân tạo giúp bạn trải nghiệm các mẫu sản phẩm đá thạch anh nhân tạo cao cấp và đa dạng của CaslaQuartz tại mọi không gian kiến trúc mà bạn muốn!</p>
+              <p>Các hình ảnh được tạo ra bởi ứng dụng này đều thuộc bản quyền của CaslaQuartz, vui lòng không sao chép và sử dụng với mục đích thương mại.</p>
+            </div>
+            <div className="tab-buttons">
+              <button
+                className={`tab-button ${activeTab === 'img2img' ? 'active' : ''}`}
+                onClick={() => switchTab('img2img')}
+              >
+                Tạo Ảnh CaslaQuartz Cùng Công Trình Có Sẵn
+              </button>
+              <button
+                className={`tab-button ${activeTab === 'text2img' ? 'active' : ''}`}
+                onClick={() => switchTab('text2img')}
+              >
+                Tạo Ảnh CaslaQuartz Từ Mô Tả Của Bạn
+              </button>
+            </div>
           </div>
-          <div className="tab-buttons">
-            <button
-              className={`tab-button ${activeTab === 'img2img' ? 'active' : ''}`}
-              onClick={() => switchTab('img2img')}
-            >
-              Tạo Ảnh CaslaQuartz Cùng Công Trình Có Sẵn
-            </button>
-            <button
-              className={`tab-button ${activeTab === 'text2img' ? 'active' : ''}`}
-              onClick={() => switchTab('text2img')}
-            >
-              Tạo Ảnh CaslaQuartz Từ Mô Tả Của Bạn
-            </button>
-          </div>
-        </div>
 
-        {error && (
-          <div className="error-message">
-            <strong>Lỗi!</strong> <span>{error}</span>
-          </div>
-        )}
+          {error && (
+            <div className="error-message">
+              <strong>Lỗi!</strong> <span>{error}</span>
+            </div>
+          )}
 
-        <div className="grid-container">
-          <div className="input-area">
-            {activeTab === 'img2img' && (
-              <>
-                <div className="dropzone" onDrop={handleDrop} onDragOver={handleDragOver}>
-                  {uploadedImage ? (
-                    <img src={uploadedImage} alt="Uploaded" className="uploaded-image" />
-                  ) : (
-                    <div onClick={() => document.getElementById('image-upload')?.click()}>
-                      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 8v4m0 0l-4-4m4 4l4-4" />
-                      </svg>
-                      <p>Kéo thả hoặc nhấn để tải ảnh</p>
-                      <input type="file" id="image-upload" className="hidden" accept="image/*" onChange={handleImageUpload} />
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <label htmlFor="position">Vị trí đặt đá:</label>
-                  <select id="position" value={position} onChange={(e) => setPosition(e.target.value)}>
-                    <option value="floor">Sàn nhà</option>
-                    <option value="wall">Tường</option>
-                    <option value="countertop">Mặt bàn</option>
-                    <option value="stair">Cầu thang</option>
-                    <option value="tabletop">Mặt bàn</option>
-                    <option value="backplash">Tường bếp</option>
-                    <option value="counter">Quầy bar</option>
-                    <option value="coffeetable">Bàn cafe</option>
-                  </select>
-                </div>
-                <div>
-                  <label htmlFor="size-img2img">Kích thước:</label>
-                  <select id="size-img2img" value={img2imgSize} onChange={(e) => setImg2ImgSize(e.target.value)}>
-                    <option value="1152x768">1152x768</option>
-                    <option value="1024x1024">1024x1024</option>
-                    <option value="768x1152">768x1152</option>
-                  </select>
-                </div>
-                <div>
-                  <label>Chọn sản phẩm:</label>
-                  <div className="product-grid">
-                    {renderProducts(img2imgSelectedProducts, setImg2ImgSelectedProducts)}
-                  </div>
-                </div>
-                <button
-                  className="generate-button"
-                  onClick={processImg2Img}
-                  disabled={loading || !uploadedImage || img2imgSelectedProducts.length === 0}
-                >
-                  {loading ? 'Đang xử lý...' : 'Tạo ảnh'}
-                </button>
-              </>
-            )}
-            {activeTab === 'text2img' && (
-              <>
-                <div>
-                  <label htmlFor="prompt">Mô tả của bạn:</label>
-                  <textarea
-                    id="prompt"
-                    placeholder="Nhập mô tả chi tiết..."
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label htmlFor="size-text2img">Kích thước:</label>
-                  <select id="size-text2img" value={text2ImgSize} onChange={(e) => setText2ImgSize(e.target.value)}>
-                    <option value="1024x1024">1024x1024</option>
-                    <option value="768x512">768x512</option>
-                    <option value="512x768">512x768</option>
-                  </select>
-                </div>
-                <div>
-                  <label>Chọn sản phẩm:</label>
-                  <div className="product-grid">
-                    {renderProducts(text2imgSelectedProducts, setText2ImgSelectedProducts)}
-                  </div>
-                </div>
-                <button
-                  className="generate-button"
-                  onClick={processText2Img}
-                  disabled={loading || !prompt || text2imgSelectedProducts.length === 0}
-                >
-                  {loading ? 'Đang xử lý...' : 'Tạo ảnh'}
-                </button>
-              </>
-            )}
-          </div>
-          <div className="output-area">
-            {console.log('Rendering output-area, generatedImage:', generatedImage, 'loading:', loading)}
-            {generatedImage ? (
-              loading ? (
-                <div className="flex flex-col items-center gap-4">
-                  <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                  <div className="w-full max-w-md">
-                    <div className="bg-gray-200 rounded-full h-2">
-                      <div
-                        className="bg-blue-500 h-2 rounded-full transition-all duration-600"
-                        style={{ width: `${progress}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                  <p className="text-gray-600 text-center">{quotes[currentQuote]}</p>
-                </div>
-              ) : (
+          <div className="grid-container">
+            <div className="input-area">
+              {activeTab === 'img2img' && (
                 <>
-                  <img src={generatedImage} alt="Generated" className="generated-image" />
-                  <a href={generatedImage} download="generated_image.png" className="download-button">
-                    Tải ảnh về máy
-                  </a>
+                  <div className="dropzone" onDrop={handleDrop} onDragOver={handleDragOver}>
+                    {uploadedImage ? (
+                      <img src={uploadedImage} alt="Uploaded" className="uploaded-image" />
+                    ) : (
+                      <div onClick={() => document.getElementById('image-upload')?.click()}>
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 8v4m0 0l-4-4m4 4l4-4" />
+                        </svg>
+                        <p>Kéo thả hoặc nhấn để tải ảnh</p>
+                        <input type="file" id="image-upload" className="hidden" accept="image/*" onChange={handleImageUpload} />
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <label htmlFor="position">Vị trí đặt đá:</label>
+                    <select id="position" value={position} onChange={(e) => setPosition(e.target.value)}>
+                      <option value="floor">Sàn nhà</option>
+                      <option value="wall">Tường</option>
+                      <option value="countertop">Mặt bàn</option>
+                      <option value="stair">Cầu thang</option>
+                      <option value="tabletop">Mặt bàn</option>
+                      <option value="backplash">Tường bếp</option>
+                      <option value="counter">Quầy bar</option>
+                      <option value="coffeetable">Bàn cafe</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label htmlFor="size-img2img">Kích thước:</label>
+                    <select id="size-img2img" value={img2imgSize} onChange={(e) => setImg2ImgSize(e.target.value)}>
+                      <option value="1152x768">1152x768</option>
+                      <option value="1024x1024">1024x1024</option>
+                      <option value="768x1152">768x1152</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label>Chọn sản phẩm:</label>
+                    <div className="product-grid">
+                      {renderProducts(img2imgSelectedProducts, setImg2ImgSelectedProducts)}
+                    </div>
+                  </div>
+                  <button
+                    className="generate-button"
+                    onClick={processImg2Img}
+                    disabled={loading || !uploadedImage || img2imgSelectedProducts.length === 0}
+                  >
+                    {loading ? 'Đang xử lý...' : 'Tạo ảnh'}
+                  </button>
                 </>
-              )
-            ) : (
-              <div className="output-placeholder">Ảnh sẽ hiển thị ở đây sau khi tạo</div>
-            )}
+              )}
+              {activeTab === 'text2img' && (
+                <>
+                  <div>
+                    <label htmlFor="prompt">Mô tả của bạn:</label>
+                    <textarea
+                      id="prompt"
+                      placeholder="Nhập mô tả chi tiết..."
+                      value={prompt}
+                      onChange={(e) => setPrompt(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="size-text2img">Kích thước:</label>
+                    <select id="size-text2img" value={text2ImgSize} onChange={(e) => setText2ImgSize(e.target.value)}>
+                      <option value="1024x1024">1024x1024</option>
+                      <option value="768x512">768x512</option>
+                      <option value="512x768">512x768</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label>Chọn sản phẩm:</label>
+                    <div className="product-grid">
+                      {renderProducts(text2imgSelectedProducts, setText2ImgSelectedProducts)}
+                    </div>
+                  </div>
+                  <button
+                    className="generate-button"
+                    onClick={processText2Img}
+                    disabled={loading || !prompt || text2imgSelectedProducts.length === 0}
+                  >
+                    {loading ? 'Đang xử lý...' : 'Tạo ảnh'}
+                  </button>
+                </>
+              )}
+            </div>
+            <div className="output-area">
+              {(() => {
+                console.log('Rendering output-area, generatedImage:', generatedImage, 'loading:', loading);
+                return generatedImage ? (
+                  loading ? (
+                    <div className="flex flex-col items-center gap-4">
+                      <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                      <div className="w-full max-w-md">
+                        <div className="bg-gray-200 rounded-full h-2">
+                          <div
+                            className="bg-blue-500 h-2 rounded-full transition-all duration-600"
+                            style={{ width: `${progress}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                      <p className="text-gray-600 text-center">{quotes[currentQuote]}</p>
+                    </div>
+                  ) : (
+                    <>
+                      <img src={generatedImage} alt="Generated" className="generated-image" />
+                      <a href={generatedImage} download="generated_image.png" className="download-button">
+                        Tải ảnh về máy
+                      </a>
+                    </>
+                  )
+                ) : (
+                  <div className="output-placeholder">Ảnh sẽ hiển thị ở đây sau khi tạo</div>
+                );
+              })()}
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
-);
+  );
 }
