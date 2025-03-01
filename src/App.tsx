@@ -352,7 +352,7 @@ export default function CaslaQuartzImageGenerator() {
 
         <div className="tab-container">
           <div className="info-box">
-            <p>Ứng dụng Trí tuệ nhân tạo giúp bạn trải nghiệm các mẫu sản phẩm đá thạch anh nhân tạo cao cấp và đa dạng của CaslaQuartz tại mọi không gian kiến trúc mà bạn muốn!.</p>
+            <p>Ứng dụng Trí tuệ nhân tạo giúp bạn trải nghiệm các mẫu sản phẩm đá thạch anh nhân tạo cao cấp và đa dạng của CaslaQuartz tại mọi không gian kiến trúc mà bạn muốn!</p>
             <p>Các hình ảnh được tạo ra bởi ứng dụng này đều thuộc bản quyền của CaslaQuartz, vui lòng không sao chép và sử dụng với mục đích thương mại.</p>
           </div>
           <div className="tab-buttons">
@@ -425,7 +425,40 @@ export default function CaslaQuartzImageGenerator() {
                 </button>
               </>
             )}
-            {/* Text2Img tương tự */}
+            {activeTab === 'text2img' && (
+              <>
+                <div>
+                  <label htmlFor="prompt">Mô tả của bạn:</label>
+                  <textarea
+                    id="prompt"
+                    placeholder="Nhập mô tả chi tiết..."
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="size-text2img">Kích thước:</label>
+                  <select id="size-text2img" value={text2ImgSize} onChange={(e) => setText2ImgSize(e.target.value)}>
+                    <option value="1024x1024">1024x1024</option>
+                    <option value="768x512">768x512</option>
+                    <option value="512x768">512x768</option>
+                  </select>
+                </div>
+                <div>
+                  <label>Chọn sản phẩm:</label>
+                  <div className="product-grid">
+                    {renderProducts(text2imgSelectedProducts, setText2ImgSelectedProducts)}
+                  </div>
+                </div>
+                <button
+                  className="generate-button"
+                  onClick={processText2Img}
+                  disabled={loading || !prompt || text2imgSelectedProducts.length === 0}
+                >
+                  {loading ? 'Đang xử lý...' : 'Tạo ảnh'}
+                </button>
+              </>
+            )}
           </div>
           <div className="output-area">
             {generatedImage ? (
@@ -451,4 +484,4 @@ export default function CaslaQuartzImageGenerator() {
     </div>
   </div>
 );
-}
+  
