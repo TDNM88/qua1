@@ -341,6 +341,32 @@ export default function CaslaQuartzImageGenerator() {
     }
   };
 
+  const [progress, setProgress] = useState(0); // Tiến trình giả từ 0-100%
+  const [currentQuote, setCurrentQuote] = useState(0);
+
+  const quotes = [
+    "Đá thạch anh mang lại sự sang trọng và bền bỉ cho mọi không gian.",
+    "Thiết kế đẹp bắt đầu từ những chi tiết nhỏ nhất.",
+    "CaslaQuartz - Sự lựa chọn hoàn hảo cho ngôi nhà hiện đại.",
+    "Mỗi viên đá là một câu chuyện về nghệ thuật và công nghệ.",
+    "Mẹo: Phối màu sáng với CaslaQuartz để làm nổi không gian.",
+    "Mẹo: Kết hợp nhiều mẫu đá để tạo điểm nhấn.",
+  ];
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (loading) {
+      interval = setInterval(() => {
+        setProgress((prev) => {
+          if (prev >= 100) return 100;
+          return prev + 1; // Tăng 1% mỗi 300ms (60s = 100%)
+        });
+        setCurrentQuote((prev) => (prev + 1) % quotes.length); // Chuyển câu trích dẫn mỗi 15s
+      }, 400); // 600ms * 100 = 60s
+    }
+    return () => clearInterval(interval); // Dọn dẹp khi loading kết thúc
+  }, [loading]);
+
   return (
   <div className="app-container">
     <div className="overlay">
@@ -463,9 +489,17 @@ export default function CaslaQuartzImageGenerator() {
           <div className="output-area">
             {generatedImage ? (
               loading ? (
-                <div className="spinner">
-                  <div></div>
-                  <span>Đang tạo ảnh...</span>
+                <div className="flex flex-col items-center gap-4">
+                  <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                  <div className="w-full max-w-md">
+                    <div className="bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-blue-500 h-2 rounded-full transition-all duration-600"
+                        style={{ width: `${progress}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                  <p className="text-gray-600 text-center">{quotes[currentQuote]}</p>
                 </div>
               ) : (
                 <>
