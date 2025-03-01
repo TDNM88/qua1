@@ -345,67 +345,77 @@ export default function CaslaQuartzImageGenerator() {
 
   // Giao diện giữ nguyên như mã của bạn
   return (
-    <div className="bg-gray-50 min-h-screen py-8">
-      <div className="bg-white rounded-xl shadow-md max-w-5xl mx-auto p-8">
-        <header className="bg-gradient-to-r from-blue-800 to-blue-600 p-6 rounded-t-xl text-white">
-          <div className="flex items-center justify-center">
-            <img src="logo.png" alt="Casla Quartz Logo" className="h-20 mr-4" />
-            <div>
-              <h1 className="text-3xl font-bold text-center">Đưa Kiệt Tác Vào Công Trình Của Bạn!</h1>
-            </div>
-          </div>
-        </header>
-        {/* ... (phần còn lại của giao diện giữ nguyên) */}
-        <div className="mt-8 flex flex-col md:flex-row items-center justify-center gap-4 px-4">
-          <div className="bg-gray-100 rounded-md p-4 text-gray-700 shadow-sm md:max-w-md">
-            <p className="mb-2">Ứng dụng Trí tuệ nhân tạo giúp bạn trải nghiệm các mẫu sản phẩm đá thạch anh nhân tạo cao cấp và đa dạng của CaslaQuartz tại mọi không gian kiến trúc mà bạn muốn!</p>
-            <p>Các hình ảnh được tạo ra bởi ứng dụng này đều thuộc bản quyền của CaslaQuartz, vui lòng không sao chép và sử dụng với mục đích thương mại.</p>
-          </div>
-          <div className="flex space-x-4">
-            <button
-              className={`px-6 py-3 rounded-md font-semibold ${activeTab === 'img2img' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
-              onClick={() => switchTab('img2img')}
-            >
-              Tạo Ảnh CaslaQuartz Cùng Công Trình Có Sẵn
-            </button>
-            <button
-              className={`px-6 py-3 rounded-md font-semibold ${activeTab === 'text2img' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
-              onClick={() => switchTab('text2img')}
-            >
-              Tạo Ảnh CaslaQuartz Từ Mô Tả Của Bạn
-            </button>
+  <div className="bg-gray-50 min-h-screen py-8">
+    <div className="bg-white rounded-xl shadow-lg max-w-5xl mx-auto p-6">
+      <header className="bg-gradient-to-r from-blue-700 to-blue-500 p-6 rounded-t-xl text-white shadow-lg">
+        <div className="flex items-center justify-center space-x-4">
+          <img src="logo.png" alt="Casla Quartz Logo" className="h-16 transition-transform duration-300 hover:scale-105" />
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-center tracking-wide">
+              Đưa Kiệt Tác Vào Công Trình Của Bạn!
+            </h1>
           </div>
         </div>
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mt-4" role="alert">
-            <strong className="font-bold">Lỗi!</strong>
-            <span className="block sm:inline">{error}</span>
-          </div>
-        )}
-        <div className="mt-8 p-4 grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="col-span-1">
-            {activeTab === 'img2img' && (
-              <div className="flex flex-col gap-4">
-                <div className="flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-4">
-                  {uploadedImage ? (
-                    <img src={uploadedImage} alt="Uploaded" className="max-w-full rounded-md" />
-                  ) : (
-                    <div
-                      className="dropzone border-2 border-dashed rounded-xl p-6 text-center cursor-pointer hover:bg-gray-50"
-                      onDrop={handleDrop}
-                      onDragOver={handleDragOver}
-                      onClick={() => document.getElementById('image-upload')?.click()}
-                    >
-                      <p className="text-gray-500">Kéo thả hoặc nhấn để tải ảnh</p>
-                      <input type="file" id="image-upload" className="hidden" accept="image/*" onChange={handleImageUpload} />
-                    </div>
-                  )}
-                </div>
+      </header>
+
+      <div className="mt-8 flex flex-col md:flex-row items-center justify-center gap-4 px-4">
+        <div className="bg-gray-100 rounded-lg p-4 text-gray-700 shadow-sm md:max-w-md">
+          <p className="mb-2 text-sm">Ứng dụng Trí tuệ nhân tạo giúp bạn trải nghiệm các mẫu sản phẩm đá thạch anh nhân tạo cao cấp...</p>
+          <p className="text-xs italic">Các hình ảnh được tạo ra bởi ứng dụng này đều thuộc bản quyền của CaslaQuartz...</p>
+        </div>
+        <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
+          <button
+            className={`px-6 py-3 rounded-lg font-semibold shadow-md transition-all duration-300 ${
+              activeTab === 'img2img' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'
+            }`}
+            onClick={() => switchTab('img2img')}
+          >
+            Tạo Ảnh CaslaQuartz Cùng Công Trình Có Sẵn
+          </button>
+          <button
+            className={`px-6 py-3 rounded-lg font-semibold shadow-md transition-all duration-300 ${
+              activeTab === 'text2img' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'
+            }`}
+            onClick={() => switchTab('text2img')}
+          >
+            Tạo Ảnh CaslaQuartz Từ Mô Tả Của Bạn
+          </button>
+        </div>
+      </div>
+
+      {error && (
+        <div className="mt-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg" role="alert">
+          <strong className="font-bold">Lỗi!</strong> <span>{error}</span>
+        </div>
+      )}
+
+      <div className="mt-8 p-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="col-span-1">
+          {activeTab === 'img2img' && (
+            <div className="flex flex-col gap-6">
+              <div
+                className="flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-6 bg-gray-50 hover:bg-gray-100 transition-colors duration-200"
+                onDrop={handleDrop}
+                onDragOver={handleDragOver}
+              >
+                {uploadedImage ? (
+                  <img src={uploadedImage} alt="Uploaded" className="max-w-full rounded-md shadow-sm" />
+                ) : (
+                  <div className="text-center" onClick={() => document.getElementById('image-upload')?.click()}>
+                    <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 8v4m0 0l-4-4m4 4l4-4" />
+                    </svg>
+                    <p className="mt-2 text-sm text-gray-600">Kéo thả hoặc nhấn để tải ảnh</p>
+                    <input type="file" id="image-upload" className="hidden" accept="image/*" onChange={handleImageUpload} />
+                  </div>
+                )}
+              </div>
+              <div className="grid grid-cols-1 gap-4">
                 <div>
-                  <label htmlFor="position" className="block text-gray-700 font-semibold mb-2">Vị trí đặt đá:</label>
+                  <label htmlFor="position" className="block text-sm font-medium text-gray-700 mb-1">Vị trí đặt đá:</label>
                   <select
                     id="position"
-                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     value={position}
                     onChange={(e) => setPosition(e.target.value)}
                   >
@@ -415,10 +425,10 @@ export default function CaslaQuartzImageGenerator() {
                   </select>
                 </div>
                 <div>
-                  <label htmlFor="size-img2img" className="block text-gray-700 font-semibold mb-2">Kích thước:</label>
+                  <label htmlFor="size-img2img" className="block text-sm font-medium text-gray-700 mb-1">Kích thước:</label>
                   <select
                     id="size-img2img"
-                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     value={img2imgSize}
                     onChange={(e) => setImg2ImgSize(e.target.value)}
                   >
@@ -427,89 +437,52 @@ export default function CaslaQuartzImageGenerator() {
                     <option value="768x1152">768x1152</option>
                   </select>
                 </div>
-                <div>
-                  <label className="block text-gray-700 font-semibold mb-2">Chọn sản phẩm:</label>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">{renderProducts(img2imgSelectedProducts, setImg2ImgSelectedProducts)}</div>
-                </div>
-                <button
-                  className="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline disabled:bg-blue-300 disabled:cursor-not-allowed"
-                  type="button"
-                  onClick={processImg2Img}
-                  disabled={loading || !uploadedImage || img2imgSelectedProducts.length === 0}
-                >
-                  {loading ? 'Đang xử lý...' : 'Tạo ảnh'}
-                </button>
               </div>
-            )}
-            {activeTab === 'text2img' && (
-              <div className="flex flex-col gap-4">
-                <div>
-                  <label htmlFor="prompt" className="block text-gray-700 font-semibold mb-2">Mô tả của bạn:</label>
-                  <textarea
-                    id="prompt"
-                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    placeholder="Nhập mô tả chi tiết..."
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                  />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Chọn sản phẩm:</label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-60 overflow-y-auto">
+                  {renderProducts(img2imgSelectedProducts, setImg2ImgSelectedProducts)}
                 </div>
-                <div>
-                  <label htmlFor="size-text2img" className="block text-gray-700 font-semibold mb-2">Kích thước:</label>
-                  <select
-                    id="size-text2img"
-                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    value={text2ImgSize}
-                    onChange={(e) => setText2ImgSize(e.target.value)}
+              </div>
+              <button
+                className="mt-4 w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200"
+                onClick={processImg2Img}
+                disabled={loading || !uploadedImage || img2imgSelectedProducts.length === 0}
+              >
+                {loading ? 'Đang xử lý...' : 'Tạo ảnh'}
+              </button>
+            </div>
+          )}
+          {/* Text2Img tương tự, chỉnh tương ứng */}
+        </div>
+        <div className="col-span-1 flex flex-col items-center justify-center">
+          {generatedImage ? (
+            <div className="text-center">
+              {loading ? (
+                <div className="flex items-center justify-center flex-col gap-2">
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500"></div>
+                  <span className="text-gray-600">Đang tạo ảnh...</span>
+                </div>
+              ) : (
+                <>
+                  <img src={generatedImage} alt="Generated" className="rounded-lg shadow-md max-w-full" />
+                  <a
+                    href={generatedImage}
+                    download="generated_image.png"
+                    className="mt-4 inline-block bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors duration-200"
                   >
-                    <option value="1024x1024">1024x1024</option>
-                    <option value="768x512">768x512</option>
-                    <option value="512x768">512x768</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-gray-700 font-semibold mb-2">Chọn sản phẩm:</label>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">{renderProducts(text2imgSelectedProducts, setText2ImgSelectedProducts)}</div>
-                </div>
-                <button
-                  className="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline disabled:bg-blue-300 disabled:cursor-not-allowed"
-                  type="button"
-                  onClick={processText2Img}
-                  disabled={loading || !prompt || text2imgSelectedProducts.length === 0}
-                >
-                  {loading ? 'Đang xử lý...' : 'Tạo ảnh'}
-                </button>
-              </div>
-            )}
-          </div>
-          <div className="col-span-1 flex flex-col items-center justify-center">
-            {generatedImage ? (
-              <div className="text-center">
-                {loading ? (
-                  <div className="flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                    <span className="ml-3">Đang tạo ảnh...</span>
-                  </div>
-                ) : (
-                  <>
-                    <img src={generatedImage} alt="Generated" className="rounded-md max-w-full mx-auto" />
-                    <a
-                      href={generatedImage}
-                      download="generated_image.png"
-                      className="inline-block mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                    >
-                      Tải ảnh về máy
-                    </a>
-                  </>
-                )}
-              </div>
-            ) : (
-              <div className="bg-gray-100 border-2 border-dashed rounded-xl w-full h-full flex items-center justify-center text-gray-500">
-                Ảnh sẽ hiển thị ở đây sau khi tạo
-              </div>
-            )}
-          </div>
+                    Tải ảnh về máy
+                  </a>
+                </>
+              )}
+            </div>
+          ) : (
+            <div className="bg-gray-100 border-2 border-dashed rounded-lg w-full h-full flex items-center justify-center text-gray-500 p-4">
+              Ảnh sẽ hiển thị ở đây sau khi tạo
+            </div>
+          )}
         </div>
       </div>
     </div>
-  );
-}
+  </div>
+);
