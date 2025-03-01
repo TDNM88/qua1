@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import tams from 'tams-sdk';
 import './styles.css';
+import tams from 'tams-sdk';
 
 // Define types
 type TabType = 'img2img' | 'text2img';
