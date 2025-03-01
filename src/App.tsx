@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import './styles.css';
 import Footer from './components/Footer';
+import UsageGuide from './components/UsageGuide'; // Import UsageGuide
 
 // Define types
 type TabType = 'img2img' | 'text2img';
@@ -46,7 +46,7 @@ const PRODUCT_IMAGE_MAP: { [key: string]: string } = {
   "C4346 Luxe": `${process.env.PUBLIC_URL}/product_images/C4346.jpg`,
   "C4342 Casla Eternal": `${process.env.PUBLIC_URL}/product_images/C4342.jpg`,
   "C4221 Athena": `${process.env.PUBLIC_URL}/product_images/C4221.jpg`,
-  "C4255 Calacatta Extra": `${process.env.PUBLIC_URL}/product_images/C4255.jpg`,
+  "C4255 спиной trực tiếpCalacatta Extra": `${process.env.PUBLIC_URL}/product_images/C4255.jpg`,
 };
 
 export default function CaslaQuartzImageGenerator() {
@@ -212,21 +212,21 @@ export default function CaslaQuartzImageGenerator() {
       setError('Vui lòng tải ảnh và chọn ít nhất một sản phẩm.');
       return;
     }
-  
+
     console.log('Starting processImg2Img, setting loading to true');
     setGeneratedImage(null); // Reset để hiển thị loading
     setProgress(0);
     setCurrentQuote(0);
     setLoading(true);
     setError(null);
-  
+
     try {
       const imageResourceId = await uploadImageToTensorArt(uploadedImage);
       const selectedProduct = img2imgSelectedProducts[0];
       const textureFilePath = PRODUCT_IMAGE_MAP[selectedProduct];
       if (!textureFilePath) throw new Error(`Không tìm thấy ảnh sản phẩm cho ${selectedProduct}`);
       const textureResourceId = await uploadImageToTensorArt(textureFilePath);
-  
+
       const [width, height] = img2imgSize.split('x').map(Number);
       const workflowParams = {
         '3': {
@@ -316,7 +316,7 @@ export default function CaslaQuartzImageGenerator() {
           properties: { 'Node name for S&R': 'PreviewImage' },
         },
       };
-  
+
       const response = await axios.post(
         `${TENSOR_ART_API_URL}/jobs/workflow`,
         { requestId: `workflow_${Date.now()}`, params: workflowParams, runningNotifyUrl: '' },
@@ -426,6 +426,7 @@ export default function CaslaQuartzImageGenerator() {
               <p>Ứng dụng Trí tuệ nhân tạo giúp bạn trải nghiệm các mẫu sản phẩm đá thạch anh nhân tạo cao cấp và đa dạng của CaslaQuartz tại mọi không gian kiến trúc mà bạn muốn!</p>
               <p>Các hình ảnh được tạo ra bởi ứng dụng này đều thuộc bản quyền của CaslaQuartz, vui lòng không sao chép và sử dụng với mục đích thương mại.</p>
             </div>
+            <UsageGuide /> {/* Thêm UsageGuide ngay dưới phần info-box */}
             <div className="tab-buttons">
               <button
                 className={`tab-button ${activeTab === 'img2img' ? 'active' : ''}`}
@@ -539,8 +540,8 @@ export default function CaslaQuartzImageGenerator() {
             <div className="output-area">
               {(() => {
                 console.log('Rendering output-area, generatedImage:', generatedImage, 'loading:', loading);
-                return generatedImage ? (
-                  loading ? (
+                if (loading) {
+                  return (
                     <div className="flex flex-col items-center gap-4">
                       <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
                       <div className="w-full max-w-md">
@@ -553,21 +554,23 @@ export default function CaslaQuartzImageGenerator() {
                       </div>
                       <p className="text-gray-600 text-center">{quotes[currentQuote]}</p>
                     </div>
-                  ) : (
+                  );
+                }
+                if (generatedImage) {
+                  return (
                     <>
                       <img src={generatedImage} alt="Generated" className="generated-image" />
                       <a href={generatedImage} download="generated_image.png" className="download-button">
                         Tải ảnh về máy
                       </a>
                     </>
-                  )
-                ) : (
-                  <div className="output-placeholder">Ảnh sẽ hiển thị ở đây sau khi tạo</div>
-                );
+                  );
+                }
+                return <div className="output-placeholder">Ảnh sẽ hiển thị ở đây sau khi tạo</div>;
               })()}
             </div>
           </div>
-          <Footer /> {/* Thêm Footer component */}
+          <Footer /> {/* Giữ Footer component */}
         </div>
       </div>
     </div>
