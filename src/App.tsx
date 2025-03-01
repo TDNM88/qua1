@@ -203,12 +203,16 @@ export default function CaslaQuartzImageGenerator() {
       setError('Vui lòng tải ảnh và chọn ít nhất một sản phẩm.');
       return;
     }
-
+  
+    console.log('Starting processImg2Img, setting loading to true');
     setLoading(true);
+    setProgress(0); // Reset progress khi bắt đầu
+    setCurrentQuote(0); // Reset quote
     setError(null);
 
     try {
       const imageResourceId = await uploadImageToTensorArt(uploadedImage);
+      console.log('Image uploaded, resourceId:', imageResourceId);
       const selectedProduct = img2imgSelectedProducts[0];
       const textureFilePath = PRODUCT_IMAGE_MAP[selectedProduct];
       if (!textureFilePath) throw new Error(`Không tìm thấy ảnh sản phẩm cho ${selectedProduct}`);
@@ -288,6 +292,7 @@ export default function CaslaQuartzImageGenerator() {
       setError(`Có lỗi xảy ra khi tạo ảnh: ${(err as Error).message}`);
       console.error(err);
     } finally {
+      console.log('Finished processImg2Img, setting loading to false');
       setLoading(false);
     }
   };
@@ -298,9 +303,12 @@ export default function CaslaQuartzImageGenerator() {
       setError('Vui lòng nhập mô tả và chọn ít nhất một sản phẩm.');
       return;
     }
-
+  
+    console.log('Starting processText2Img, setting loading to true');
     setLoading(true);
-    setError(null);
+    setProgress(0); // Reset progress khi bắt đầu
+    setCurrentQuote(0); // Reset quote
+    setError(null);  
 
     try {
       const [width, height] = text2ImgSize.split('x').map(Number);
@@ -337,6 +345,7 @@ export default function CaslaQuartzImageGenerator() {
       setError(`Có lỗi xảy ra khi tạo ảnh: ${(err as Error).message}`);
       console.error(err);
     } finally {
+      console.log('Finished processText2Img, setting loading to false');
       setLoading(false);
     }
   };
@@ -354,17 +363,27 @@ export default function CaslaQuartzImageGenerator() {
   ];
 
   useEffect(() => {
+    console.log('useEffect triggered, loading:', loading);
     let interval: NodeJS.Timeout;
     if (loading) {
+      console.log('Starting interval for progress and quotes');
       interval = setInterval(() => {
         setProgress((prev) => {
-          if (prev >= 100) return 100;
-          return prev + 1; // Tăng 1% mỗi 300ms (60s = 100%)
+          const newProgress = prev >= 100 ? 100 : prev + 1;
+          console.log('Progress updated:', newProgress);
+          return newProgress;
         });
-        setCurrentQuote((prev) => (prev + 1) % quotes.length); // Chuyển câu trích dẫn mỗi 15s
-      }, 400); // 600ms * 100 = 60s
+        setCurrentQuote((prev) => {
+          const newQuote = (prev + 1) % quotes.length;
+          console.log('Quote updated:', quotes[newQuote]);
+          return newQuote;
+        });
+      }, 400);
     }
-    return () => clearInterval(interval); // Dọn dẹp khi loading kết thúc
+    return () => {
+      console.log('Cleaning up interval');
+      clearInterval(interval);
+    };
   }, [loading]);
 
   return (
@@ -492,6 +511,7 @@ export default function CaslaQuartzImageGenerator() {
             )}
           </div>
           <div className="output-area">
+            {console.log('Rendering output-area, generatedImage:', generatedImage, 'loading:', loading)}
             {generatedImage ? (
               loading ? (
                 <div className="flex flex-col items-center gap-4">
