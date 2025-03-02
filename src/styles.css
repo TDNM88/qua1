@@ -417,7 +417,7 @@ textarea:focus {
 .guide-expand-btn {
   display: inline-block;
   padding: 0.5rem 1rem;
-  margin: 1rem 0;
+  margin-top: 0.5rem;
   background: transparent;
   color: #007bff;
   border: 2px solid #007bff;
@@ -432,6 +432,19 @@ textarea:focus {
   background: #007bff;
   color: #fff;
   transform: scale(1.05);
+}
+
+/* Hiệu ứng mũi tên cho nút */
+.guide-expand-btn[aria-expanded="true"]::before {
+  content: '\25B2'; /* Mũi tên lên khi thu gọn */
+  display: inline-block;
+  margin-right: 8px;
+}
+
+.guide-expand-btn[aria-expanded="false"]::before {
+  content: '\25BC'; /* Mũi tên xuống khi mở rộng */
+  display: inline-block;
+  margin-right: 8px;
 }
 
 /* Đoạn kết thúc */
@@ -450,16 +463,6 @@ textarea:focus {
 .guide-footer a:hover {
   color: #0056b3;
   text-decoration: underline;
-}
-
-.guide-expand-btn::before {
-  content: '\25BC'; /* Mũi tên xuống khi mở rộng */
-  display: inline-block;
-  margin-right: 8px;
-}
-
-.guide-expand-btn[aria-expanded="true"]::before {
-  content: '\25B2'; /* Mũi tên lên khi thu gọn */
 }
 
 .guide-expanded-content {
