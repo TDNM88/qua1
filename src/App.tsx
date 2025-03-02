@@ -506,7 +506,6 @@ export default function CaslaQuartzImageGenerator() {
                         placeholder="Nhập vị trí tùy chỉnh..."
                         maxLength={15}
                         className="custom-position-input"
-                        style={{ marginTop: '10px', width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '5px' }}
                       />
                     )}
                   </div>
