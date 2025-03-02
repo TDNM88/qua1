@@ -529,6 +529,22 @@ textarea:focus {
   transition: color 0.3s ease;
 }
 
+.custom-position-input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 14px;
+  color: #333;
+  box-sizing: border-box;
+  margin-top: 10px;
+}
+
+.custom-position-input:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+}
 .guide-footer a:hover {
   color: #0056b3;
   text-decoration: underline;
