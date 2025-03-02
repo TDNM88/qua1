@@ -382,14 +382,16 @@ textarea:focus {
 
 /* Tiêu đề của UsageGuide */
 .guide-title {
-  font-size: 1.5rem;
+  font-size: 1.8rem; /* Tăng kích thước chữ tiêu đề */
   font-weight: 600;
   color: #1a3c6d;
   margin-bottom: 1rem;
+  width: 100%; /* Đảm bảo tiêu đề trải đều */
+  text-align: left; /* Căn trái tiêu đề */
   position: relative;
-  display: inline-block;
 }
 
+/* Gạch chân tiêu đề */
 .guide-title::after {
   content: '';
   width: 50%;
@@ -403,11 +405,13 @@ textarea:focus {
 
 /* Đoạn giới thiệu */
 .guide-intro {
-  font-size: 1rem;
+  font-size: 1.2rem; /* Tăng kích thước chữ lên 1.2rem (19.2px) */
   color: #5a5a5a;
   margin-bottom: 1.5rem;
   line-height: 1.6;
   font-style: italic;
+  width: 100%; /* Đảm bảo đoạn giới thiệu trải đều */
+  text-align: justify; /* Căn đều hai bên lề */
 }
 
 /* Danh sách các mẹo */
