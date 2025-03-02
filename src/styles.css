@@ -21,7 +21,7 @@
   border-radius: 5px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   padding: 20px;
-  max-width: 1280px; /* Giữ max-width lớn để chứa các thành phần con */
+  max-width: 1280px;
   margin: 0 auto;
 }
 
@@ -35,7 +35,7 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  max-width: 800px; /* Đồng bộ chiều rộng với các thành phần khác */
+  max-width: 800px; /* Đồng bộ chiều rộng */
   margin: 0 auto;
 }
 
@@ -79,7 +79,7 @@
   flex-direction: column;
   gap: 10px;
   width: 100%;
-  max-width: 800px; /* Đồng bộ chiều rộng với các thành phần khác */
+  max-width: 800px; /* Đồng bộ chiều rộng */
 }
 
 .tab-button {
@@ -91,7 +91,7 @@
   font-weight: bold;
   cursor: pointer;
   transition: background-color 0.3s, color 0.3s;
-  width: 100%; /* Đảm bảo nút trải đều chiều rộng của tab-buttons */
+  width: 100%;
   box-sizing: border-box;
 }
 
@@ -111,7 +111,7 @@
   grid-template-columns: 1fr;
   gap: 20px;
   padding: 20px;
-  max-width: 800px; /* Đồng bộ chiều rộng với các thành phần khác */
+  max-width: 800px;
   margin: 0 auto;
 }
 
@@ -130,8 +130,9 @@
   flex-direction: column;
   gap: 20px;
   width: 100%;
-  max-width: 100%;
-  overflow-x: hidden;
+  max-width: 100%; /* Không vượt quá khung cha */
+  overflow-x: hidden; /* Ngăn tràn nội dung ngang */
+  box-sizing: border-box;
 }
 
 .dropzone {
@@ -141,6 +142,8 @@
   text-align: center;
   background-color: #f9f9f9;
   transition: background-color 0.3s;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .dropzone:hover {
@@ -181,6 +184,7 @@ textarea {
   border-radius: 5px;
   font-size: 14px;
   color: #333;
+  box-sizing: border-box;
 }
 
 select:focus,
@@ -193,13 +197,14 @@ textarea:focus {
 /* Container cho danh sách sản phẩm */
 .product-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr); /* 3 cột trên desktop */
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); /* Responsive số cột */
   gap: 10px;
   width: 100%;
-  max-width: 100%;
+  max-width: 100%; /* Không vượt quá khung cha */
   padding: 0.5rem;
   justify-items: stretch;
   align-items: stretch;
+  box-sizing: border-box;
 }
 
 /* Nút sản phẩm */
@@ -234,19 +239,19 @@ textarea:focus {
 /* Responsive cho product-grid và product-button */
 @media (max-width: 768px) {
   .product-grid {
-    grid-template-columns: repeat(2, 1fr); /* 2 cột trên tablet */
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
     gap: 8px;
   }
 
   .product-button {
-    font-size: 14px; /* Giảm kích thước chữ trên tablet */
+    font-size: 14px;
     padding: 8px;
   }
 }
 
 @media (max-width: 480px) {
   .product-grid {
-    grid-template-columns: repeat(1, 1fr); /* 1 cột trên mobile nhỏ */
+    grid-template-columns: repeat(auto-fit, minmax(100%, 1fr));
     gap: 6px;
   }
 
@@ -285,6 +290,7 @@ textarea:focus {
   justify-content: center;
   width: 100%;
   max-width: 100%;
+  box-sizing: border-box;
 }
 
 /* Output placeholder */
@@ -354,7 +360,7 @@ textarea:focus {
   padding: 15px;
   border-radius: 5px;
   margin-top: 20px;
-  max-width: 800px; /* Đồng bộ chiều rộng */
+  max-width: 800px;
   width: 100%;
   box-sizing: border-box;
 }
@@ -388,8 +394,8 @@ textarea:focus {
 
 /* Container cho UsageGuide */
 .guide-container {
-  max-width: 800px; /* Đồng bộ chiều rộng với các thành phần khác */
-  width: 100%; /* Đảm bảo trải đều trên các màn hình nhỏ hơn */
+  max-width: 800px;
+  width: 100%;
   margin: 2rem auto;
   padding: 2rem;
   background: linear-gradient(135deg, #f9f9fb 0%, #fefefe 100%);
