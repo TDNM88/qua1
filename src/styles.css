@@ -21,7 +21,7 @@
   border-radius: 5px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   padding: 20px;
-  max-width: 1280px;
+  max-width: 1280px; /* Giữ max-width lớn để chứa các thành phần con */
   margin: 0 auto;
 }
 
@@ -35,6 +35,8 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
+  max-width: 800px; /* Đồng bộ chiều rộng với các thành phần khác */
+  margin: 0 auto;
 }
 
 .header img {
@@ -59,6 +61,8 @@
   gap: 10px;
   padding: 20px;
   align-items: center;
+  max-width: 800px; /* Đồng bộ chiều rộng */
+  margin: 0 auto;
 }
 
 .info-box {
@@ -74,6 +78,8 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+  width: 100%;
+  max-width: 800px; /* Đồng bộ chiều rộng với các thành phần khác */
 }
 
 .tab-button {
@@ -85,6 +91,8 @@
   font-weight: bold;
   cursor: pointer;
   transition: background-color 0.3s, color 0.3s;
+  width: 100%; /* Đảm bảo nút trải đều chiều rộng của tab-buttons */
+  box-sizing: border-box;
 }
 
 .tab-button.active {
@@ -103,6 +111,8 @@
   grid-template-columns: 1fr;
   gap: 20px;
   padding: 20px;
+  max-width: 800px; /* Đồng bộ chiều rộng với các thành phần khác */
+  margin: 0 auto;
 }
 
 @media (min-width: 768px) {
@@ -185,22 +195,23 @@ textarea:focus {
   display: grid;
   grid-template-columns: repeat(3, 1fr); /* 3 cột trên desktop */
   gap: 10px;
+  width: 100%;
   max-width: 100%;
   padding: 0.5rem;
-  justify-items: stretch; /* Đảm bảo các phần tử lấp đầy ô grid */
-  align-items: stretch; /* Đảm bảo chiều cao đồng đều từ trên xuống dưới */
+  justify-items: stretch;
+  align-items: stretch;
 }
 
 /* Nút sản phẩm */
 .product-button {
-  width: 100%; /* Chiếm chiều rộng đầy đủ của ô grid */
+  width: 100%;
   padding: 10px;
   border: 1px solid #ccc;
   border-radius: 5px;
   background-color: #fff;
   color: #333;
   font-size: 16px;
-  text-align: left; /* Căn trái chữ trong nút */
+  text-align: left;
   cursor: pointer;
   transition: all 0.3s ease;
   overflow: hidden;
@@ -272,8 +283,11 @@ textarea:focus {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  width: 100%;
+  max-width: 100%;
 }
 
+/* Output placeholder */
 .output-placeholder {
   border: 2px dashed #ccc;
   border-radius: 5px;
@@ -340,6 +354,9 @@ textarea:focus {
   padding: 15px;
   border-radius: 5px;
   margin-top: 20px;
+  max-width: 800px; /* Đồng bộ chiều rộng */
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .error-message strong {
@@ -371,27 +388,28 @@ textarea:focus {
 
 /* Container cho UsageGuide */
 .guide-container {
-  max-width: 800px;
+  max-width: 800px; /* Đồng bộ chiều rộng với các thành phần khác */
+  width: 100%; /* Đảm bảo trải đều trên các màn hình nhỏ hơn */
   margin: 2rem auto;
   padding: 2rem;
   background: linear-gradient(135deg, #f9f9fb 0%, #fefefe 100%);
   border-radius: 10px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   border-left: 4px solid #007bff;
+  box-sizing: border-box;
 }
 
 /* Tiêu đề của UsageGuide */
 .guide-title {
-  font-size: 1.8rem; /* Tăng kích thước chữ tiêu đề */
+  font-size: 1.8rem;
   font-weight: 600;
   color: #1a3c6d;
   margin-bottom: 1rem;
-  width: 100%; /* Đảm bảo tiêu đề trải đều */
-  text-align: left; /* Căn trái tiêu đề */
+  width: 100%;
+  text-align: left;
   position: relative;
 }
 
-/* Gạch chân tiêu đề */
 .guide-title::after {
   content: '';
   width: 50%;
@@ -405,13 +423,13 @@ textarea:focus {
 
 /* Đoạn giới thiệu */
 .guide-intro {
-  font-size: 1.2rem; /* Tăng kích thước chữ lên 1.2rem (19.2px) */
+  font-size: 1.2rem;
   color: #5a5a5a;
   margin-bottom: 1.5rem;
   line-height: 1.6;
   font-style: italic;
-  width: 100%; /* Đảm bảo đoạn giới thiệu trải đều */
-  text-align: justify; /* Căn đều hai bên lề */
+  width: 100%;
+  text-align: justify;
 }
 
 /* Danh sách các mẹo */
