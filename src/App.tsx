@@ -53,6 +53,7 @@ export default function CaslaQuartzImageGenerator() {
   const [activeTab, setActiveTab] = useState<TabType>('img2img');
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [position, setPosition] = useState<string>('floor');
+  const [isCustomPosition, setIsCustomPosition] = useState<boolean>(false); // Thêm trạng thái để theo dõi tùy chỉnh
   const [img2imgSize, setImg2ImgSize] = useState<string>('1024x1024');
   const [text2ImgSize, setText2ImgSize] = useState<string>('1024x1024');
   const [prompt, setPrompt] = useState<string>('');
@@ -207,6 +208,24 @@ export default function CaslaQuartzImageGenerator() {
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => e.preventDefault();
 
+  const handlePositionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    if (value === 'custom') {
+      setIsCustomPosition(true);
+      setPosition(''); // Reset position để người dùng nhập tùy chỉnh
+    } else {
+      setIsCustomPosition(false);
+      setPosition(value);
+    }
+  };
+
+  const handleCustomPositionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (value.length <= 15) { // Giới hạn không quá 15 ký tự
+      setPosition(value);
+    }
+  };
+
   const processImg2Img = async () => {
     if (!uploadedImage || img2imgSelectedProducts.length === 0) {
       setError('Vui lòng tải ảnh và chọn ít nhất một sản phẩm.');
@@ -214,7 +233,7 @@ export default function CaslaQuartzImageGenerator() {
     }
 
     console.log('Starting processImg2Img, setting loading to true');
-    setGeneratedImage(null); // Reset để hiển thị loading
+    setGeneratedImage(null);
     setProgress(0);
     setCurrentQuote(0);
     setLoading(true);
@@ -341,7 +360,7 @@ export default function CaslaQuartzImageGenerator() {
     }
 
     console.log('Starting processText2Img, setting loading to true');
-    setGeneratedImage(null); // Reset để hiển thị loading
+    setGeneratedImage(null);
     setProgress(0);
     setCurrentQuote(0);
     setLoading(true);
@@ -422,7 +441,7 @@ export default function CaslaQuartzImageGenerator() {
           </header>
 
           <div className="tab-container">
-            <UsageGuide /> {/* Đã tích hợp info-box vào UsageGuide */}
+            <UsageGuide />
             <div className="tab-buttons">
               <button
                 className={`tab-button ${activeTab === 'img2img' ? 'active' : ''}`}
@@ -464,7 +483,11 @@ export default function CaslaQuartzImageGenerator() {
                   </div>
                   <div>
                     <label htmlFor="position">Vị trí đặt đá:</label>
-                    <select id="position" value={position} onChange={(e) => setPosition(e.target.value)}>
+                    <select
+                      id="position"
+                      value={isCustomPosition ? 'custom' : position}
+                      onChange={handlePositionChange}
+                    >
                       <option value="floor">Sàn nhà</option>
                       <option value="wall">Tường</option>
                       <option value="countertop">Mặt bàn</option>
@@ -473,7 +496,19 @@ export default function CaslaQuartzImageGenerator() {
                       <option value="backplash">Tường bếp</option>
                       <option value="counter">Quầy bar</option>
                       <option value="coffeetable">Bàn cafe</option>
+                      <option value="custom">Tùy chỉnh</option>
                     </select>
+                    {isCustomPosition && (
+                      <input
+                        type="text"
+                        value={position}
+                        onChange={handleCustomPositionChange}
+                        placeholder="Nhập vị trí tùy chỉnh..."
+                        maxLength={15}
+                        className="custom-position-input"
+                        style={{ marginTop: '10px', width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '5px' }}
+                      />
+                    )}
                   </div>
                   <div>
                     <label htmlFor="size-img2img">Kích thước:</label>
