@@ -120,8 +120,8 @@
   flex-direction: column;
   gap: 20px;
   width: 100%;
-  max-width: 100%; /* Đảm bảo khung không vượt quá giới hạn */
-  overflow-x: hidden; /* Ngăn tràn nội dung ngang */
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 .dropzone {
@@ -182,33 +182,31 @@ textarea:focus {
 
 /* Container cho danh sách sản phẩm */
 .product-grid {
-  display: flex;
-  flex-wrap: wrap; /* Wrap xuống dòng nếu không đủ chỗ */
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* 3 cột trên desktop */
   gap: 10px;
-  max-width: 100%; /* Giới hạn chiều rộng tối đa */
-  overflow-x: auto; /* Thanh cuộn ngang nếu danh sách quá dài */
+  max-width: 100%;
   padding: 0.5rem;
-  justify-content: flex-start; /* Căn trái để các nút không bị dàn đều quá rộng */
+  justify-items: stretch; /* Đảm bảo các phần tử lấp đầy ô grid */
+  align-items: stretch; /* Đảm bảo chiều cao đồng đều từ trên xuống dưới */
 }
 
 /* Nút sản phẩm */
 .product-button {
+  width: 100%; /* Chiếm chiều rộng đầy đủ của ô grid */
   padding: 10px;
   border: 1px solid #ccc;
   border-radius: 5px;
   background-color: #fff;
   color: #333;
   font-size: 16px;
-  text-align: center;
+  text-align: left; /* Căn trái chữ trong nút */
   cursor: pointer;
   transition: all 0.3s ease;
-  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  flex: 1 1 calc(33.33% - 10px); /* Mỗi nút chiếm khoảng 1/3 chiều rộng, trừ khoảng cách gap */
+  white-space: nowrap;
   box-sizing: border-box;
-  min-width: 150px; /* Đảm bảo nút có chiều rộng tối thiểu */
-  max-width: calc(50% - 10px); /* Giới hạn chiều rộng tối đa trên màn hình nhỏ */
 }
 
 .product-button.active {
@@ -225,33 +223,25 @@ textarea:focus {
 /* Responsive cho product-grid và product-button */
 @media (max-width: 768px) {
   .product-grid {
-    flex-direction: row; /* Giữ hàng ngang nhưng có thể cuộn */
-    justify-content: flex-start;
-    overflow-x: auto; /* Thanh cuộn ngang trên mobile */
-    white-space: nowrap; /* Không wrap trên mobile nhỏ */
+    grid-template-columns: repeat(2, 1fr); /* 2 cột trên tablet */
+    gap: 8px;
   }
 
   .product-button {
-    flex: none; /* Không co giãn trên mobile */
-    min-width: 150px;
-    max-width: none;
-    margin-right: 10px; /* Khoảng cách giữa các nút khi cuộn ngang */
+    font-size: 14px; /* Giảm kích thước chữ trên tablet */
+    padding: 8px;
   }
 }
 
 @media (max-width: 480px) {
   .product-grid {
-    flex-direction: column; /* Xếp dọc trên màn hình rất nhỏ */
-    align-items: stretch; /* Căn giữa theo chiều dọc */
-    overflow-x: hidden; /* Không cần cuộn ngang trên màn nhỏ */
-    white-space: normal; /* Cho phép wrap trên màn nhỏ */
+    grid-template-columns: repeat(1, 1fr); /* 1 cột trên mobile nhỏ */
+    gap: 6px;
   }
 
   .product-button {
-    width: 100%; /* Chiếm toàn bộ chiều rộng trên màn hình rất nhỏ */
-    margin-right: 0; /* Không cần margin bên phải khi xếp dọc */
-    min-width: auto;
-    max-width: none;
+    font-size: 14px;
+    padding: 8px;
   }
 }
 
