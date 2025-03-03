@@ -53,7 +53,7 @@ export default function CaslaQuartzImageGenerator() {
   const [activeTab, setActiveTab] = useState<TabType>('img2img');
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [position, setPosition] = useState<string>('floor');
-  const [isCustomPosition, setIsCustomPosition] = useState<boolean>(false); // Thêm trạng thái để theo dõi tùy chỉnh
+  const [isCustomPosition, setIsCustomPosition] = useState<boolean>(false);
   const [img2imgSize, setImg2ImgSize] = useState<string>('1024x1024');
   const [text2ImgSize, setText2ImgSize] = useState<string>('1024x1024');
   const [prompt, setPrompt] = useState<string>('');
@@ -183,7 +183,9 @@ export default function CaslaQuartzImageGenerator() {
   const switchTab = (tab: TabType) => {
     setActiveTab(tab);
     setGeneratedImage(null);
-    setLoading(false);
+    setLoading<|control498|>
+
+(false);
     setError(null);
   };
 
@@ -212,7 +214,7 @@ export default function CaslaQuartzImageGenerator() {
     const value = e.target.value;
     if (value === 'custom') {
       setIsCustomPosition(true);
-      setPosition(''); // Reset position để người dùng nhập tùy chỉnh
+      setPosition('');
     } else {
       setIsCustomPosition(false);
       setPosition(value);
@@ -221,14 +223,14 @@ export default function CaslaQuartzImageGenerator() {
 
   const handleCustomPositionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    if (value.length <= 15) { // Giới hạn không quá 15 ký tự
+    if (value.length <= 15) {
       setPosition(value);
     }
   };
 
   const processImg2Img = async () => {
-    if (!uploadedImage || img2imgSelectedProducts.length === 0) {
-      setError('Vui lòng tải ảnh và chọn ít nhất một sản phẩm.');
+    if (!uploadedImage || img2imgSelectedProducts.length === 0 || !position) {
+      setError('Vui lòng tải ảnh, chọn ít nhất một sản phẩm và chọn/nhập vị trí đặt đá.');
       return;
     }
 
@@ -248,20 +250,20 @@ export default function CaslaQuartzImageGenerator() {
 
       const [width, height] = img2imgSize.split('x').map(Number);
       const workflowParams = {
-        '3': {
-          classType: 'LayerMask: LoadSegmentAnythingModels',
-          inputs: { grounding_dino_model: 'GroundingDINO_SwinB (938MB)', sam_model: 'sam_vit_h (2.56GB)' },
-          properties: { 'Node name for S&R': 'LayerMask: LoadSegmentAnythingModels' },
+        '71': {
+          classType: 'SAMModelLoader (segment anything)',
+          inputs: { model_name: 'sam_vit_b (375MB)' },
+          properties: { 'Node name for S&R': 'SAMModelLoader (segment anything)' },
+        },
+        '72': {
+          classType: 'GroundingDinoModelLoader (segment anything)',
+          inputs: { model_name: 'GroundingDINO_SwinB (938MB)' },
+          properties: { 'Node name for S&R': 'GroundingDinoModelLoader (segment anything)' },
         },
         '17': {
           classType: 'TensorArt_LoadImage',
           inputs: { _height: 768, _width: 512, image: textureResourceId, upload: 'image' },
           properties: { 'Node name for S&R': 'TensorArt_LoadImage' },
-        },
-        '42': {
-          classType: 'TensorArt_PromptText',
-          inputs: { Text: position.toLowerCase() },
-          properties: { 'Node name for S&R': 'TensorArt_PromptText' },
         },
         '43': {
           classType: 'TensorArt_LoadImage',
@@ -272,61 +274,57 @@ export default function CaslaQuartzImageGenerator() {
           classType: 'CR Upscale Image',
           inputs: { image: ['43', 0] },
           properties: { 'Node name for S&R': 'CR Upscale Image' },
-        },
-        '61': {
-          classType: 'ImageFilterEdgeEnhance',
-          inputs: { images: ['66', 0] },
-          properties: { 'Node name for S&R': 'ImageFilterEdgeEnhance' },
+          widgets_values: [
+            "4x-UltraSharp.pth",
+            "rescale",
+            2,
+            1024,
+            "lanczos",
+            "true",
+            8
+          ],
         },
         '10': {
           classType: 'Image Seamless Texture',
           inputs: { images: ['17', 0], blending: 0.4, tiled: 'true', tiles: 2 },
           properties: { 'Node name for S&R': 'Image Seamless Texture' },
         },
-        '1': {
-          classType: 'LayerMask: SegmentAnythingUltra V3',
+        '70': {
+          classType: 'GroundingDinoSAMSegment (segment anything)',
           inputs: {
-            image: ['61', 0],
-            sam_models: ['3', 0],
-            prompt: ['42', 0],
-            black_point: 0.33,
-            detail_method: 'PyMatting',
-            detail_erode: 9,
-            detail_dilate: 22,
-            threshold: 0.14,
-            white_point: 0.94,
-            process_detail: true,
-            device: 'cuda',
-            max_megapixels: 2,
+            sam_model: ['71', 0],
+            grounding_dino_model: ['72', 0],
+            image: ['66', 0],
+            prompt: position.toLowerCase(),
+            threshold: 0.3,
           },
-          properties: { 'Node name for S&R': 'LayerMask: SegmentAnythingUltra V3' },
+          properties: { 'Node name for S&R': 'GroundingDinoSAMSegment (segment anything)' },
         },
-        '47': {
-          classType: 'LayerMask: MaskEdgeUltraDetail V2',
+        '101': {
+          classType: 'MaskFix+',
           inputs: {
-            image: ['61', 0],
-            mask: ['1', 1],
-            detail_method: 'VITMatte',
-            detail_erode: 10,
-            detail_dilate: 32,
-            black_point: 0.76,
-            process_erode: 11,
-            process_dilate: 15,
-            threshold: 0.14,
-            white_point: 0.99,
-            device: 'cuda',
-            max_megapixels: 2,
+            mask: ['70', 1],
+            erode: 5,
+            dilate: 17,
+            blur: 12,
+            threshold: 4,
+            invert: 0,
           },
-          properties: { 'Node name for S&R': 'LayerMask: MaskEdgeUltraDetail V2' },
+          properties: { 'Node name for S&R': 'MaskFix+' },
         },
-        '8': {
+        '73': {
           classType: 'MaskToImage',
-          inputs: { mask: ['47', 1] },
+          inputs: { mask: ['101', 0] },
           properties: { 'Node name for S&R': 'MaskToImage' },
         },
         '13': {
           classType: 'Paste By Mask',
-          inputs: { image_base: ['61', 0], image_to_paste: ['10', 0], mask: ['8', 0], resize_behavior: 'resize' },
+          inputs: {
+            image_base: ['66', 0],
+            image_to_paste: ['10', 0],
+            mask: ['73', 0],
+            resize_behavior: 'resize'
+          },
           properties: { 'Node name for S&R': 'Paste By Mask' },
         },
         '7': {
