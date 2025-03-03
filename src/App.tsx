@@ -569,17 +569,18 @@ export default function CaslaQuartzImageGenerator() {
                 }
                 if (loading) {
                   return (
-                    <div className="flex flex-col items-center gap-4">
-                      <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                      <div className="w-full max-w-md">
-                        <div className="bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-blue-500 h-2 rounded-full transition-all duration-600"
-                            style={{ width: `${progress}%` }}
-                          ></div>
-                        </div>
+                    <div className="loading-container">
+                      <div className="spinner">
+                        <div></div>
                       </div>
-                      <p className="text-gray-600 text-center">{quotes[currentQuote]}</p>
+                      <div className="progress-bar">
+                        <div
+                          className="progress-bar-fill"
+                          style={{ width: `${progress}%` }}
+                        ></div>
+                      </div>
+                      <p className="loading-text quote-text">{quotes[currentQuote]}</p>
+                      <p className="loading-text estimated-time">Thời gian chờ dự kiến: 1-2 phút</p>
                     </div>
                   );
                 }
