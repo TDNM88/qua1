@@ -183,9 +183,7 @@ export default function CaslaQuartzImageGenerator() {
   const switchTab = (tab: TabType) => {
     setActiveTab(tab);
     setGeneratedImage(null);
-    setLoading<|control498|>
-
-(false);
+    setLoading(false);
     setError(null);
   };
 
@@ -456,12 +454,6 @@ export default function CaslaQuartzImageGenerator() {
             </div>
           </div>
 
-          {error && (
-            <div className="error-message">
-              <strong>Lỗi!</strong> <span>{error}</span>
-            </div>
-          )}
-
           <div className="grid-container">
             <div className="input-area">
               {activeTab === 'img2img' && (
@@ -567,9 +559,16 @@ export default function CaslaQuartzImageGenerator() {
             </div>
             <div className="output-area">
               {(() => {
-                console.log('Rendering output-area, generatedImage:', generatedImage, 'loading:', loading);
-                return generatedImage ? (
-                  loading ? (
+                console.log('Rendering output-area, generatedImage:', generatedImage, 'loading:', loading, 'error:', error);
+                if (error) {
+                  return (
+                    <div className="error-message">
+                      <strong>Lỗi!</strong> <span>{error}</span>
+                    </div>
+                  );
+                }
+                if (loading) {
+                  return (
                     <div className="flex flex-col items-center gap-4">
                       <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
                       <div className="w-full max-w-md">
@@ -582,17 +581,19 @@ export default function CaslaQuartzImageGenerator() {
                       </div>
                       <p className="text-gray-600 text-center">{quotes[currentQuote]}</p>
                     </div>
-                  ) : (
+                  );
+                }
+                if (generatedImage) {
+                  return (
                     <>
                       <img src={generatedImage} alt="Generated" className="generated-image" />
                       <a href={generatedImage} download="generated_image.png" className="download-button">
                         Tải ảnh về máy
                       </a>
                     </>
-                  )
-                ) : (
-                  <div className="output-placeholder">Ảnh sẽ hiển thị ở đây sau khi tạo</div>
-                );
+                  );
+                }
+                return <div className="output-placeholder">Ảnh sẽ hiển thị ở đây sau khi tạo</div>;
               })()}
             </div>
           </div>
