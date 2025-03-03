@@ -35,7 +35,7 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  max-width: 800px; /* Đồng bộ chiều rộng */
+  max-width: 800px;
   margin: 0 auto;
 }
 
@@ -61,7 +61,7 @@
   gap: 10px;
   padding: 20px;
   align-items: center;
-  max-width: 800px; /* Đồng bộ chiều rộng */
+  max-width: 800px;
   margin: 0 auto;
 }
 
@@ -79,7 +79,7 @@
   flex-direction: column;
   gap: 10px;
   width: 100%;
-  max-width: 800px; /* Đồng bộ chiều rộng */
+  max-width: 800px;
 }
 
 .tab-button {
@@ -130,8 +130,8 @@
   flex-direction: column;
   gap: 20px;
   width: 100%;
-  max-width: 100%; /* Không vượt quá khung cha */
-  overflow-x: hidden; /* Ngăn tràn nội dung ngang */
+  max-width: 100%;
+  overflow-x: hidden;
   box-sizing: border-box;
 }
 
@@ -197,10 +197,10 @@ textarea:focus {
 /* Container cho danh sách sản phẩm */
 .product-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); /* Responsive số cột */
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 10px;
   width: 100%;
-  max-width: 100%; /* Không vượt quá khung cha */
+  max-width: 100%;
   padding: 0.5rem;
   justify-items: stretch;
   align-items: stretch;
@@ -305,29 +305,122 @@ textarea:focus {
   height: 100%;
 }
 
-.spinner {
+/* Loading container */
+.loading-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 15px;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 5px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Spinner */
+.spinner {
+  position: relative;
+  width: 50px;
+  height: 50px;
 }
 
 .spinner div {
-  width: 48px;
-  height: 48px;
-  border: 4px solid #007bff;
-  border-top: 4px solid transparent;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border: 5px solid transparent;
+  border-top-color: #007bff;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
 
-.spinner span {
-  color: #666;
+.spinner div::before {
+  content: '';
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  right: 5px;
+  bottom: 5px;
+  border: 5px solid transparent;
+  border-top-color: #0056b3;
+  border-radius: 50%;
+  animation: spin 1.5s linear infinite reverse;
 }
 
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+/* Progress bar */
+.progress-bar {
+  width: 100%;
+  max-width: 400px;
+  background: #e0e0e0;
+  border-radius: 10px;
+  overflow: hidden;
+  height: 10px;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(to right, #007bff, #0056b3);
+  border-radius: 10px;
+  transition: width 0.8s ease-in-out;
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-bar-fill::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.2) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0.2) 75%,
+    transparent 75%,
+    transparent
+  );
+  background-size: 40px 40px;
+  animation: progressMove 2s linear infinite;
+}
+
+@keyframes progressMove {
+  0% { background-position: 0 0; }
+  100% { background-position: 40px 40px; }
+}
+
+/* Loading text (quotes và thời gian chờ dự kiến) */
+.loading-text {
+  color: #666;
+  font-size: 14px;
+  text-align: center;
+  margin-top: 10px;
+  opacity: 0;
+  animation: fadeInText 0.5s ease-in forwards;
+}
+
+.quote-text {
+  font-style: italic;
+}
+
+.estimated-time {
+  font-size: 12px;
+  color: #888;
+}
+
+@keyframes fadeInText {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
 
 .generated-image {
@@ -359,36 +452,15 @@ textarea:focus {
   color: #721c24;
   padding: 15px;
   border-radius: 5px;
-  text-align: center;
+  margin-top: 20px;
+  max-width: 800px;
   width: 100%;
   box-sizing: border-box;
+  text-align: center;
 }
 
 .error-message strong {
   font-weight: bold;
-}
-
-.progress-bar {
-  width: 100%;
-  max-width: 400px;
-  background-color: #eee;
-  border-radius: 5px;
-  height: 8px;
-  overflow: hidden;
-}
-
-.progress-bar-fill {
-  height: 100%;
-  background-color: #007bff;
-  border-radius: 5px;
-  transition: width 0.6s ease;
-}
-
-.loading-text {
-  color: #666;
-  font-size: 14px;
-  text-align: center;
-  margin-top: 10px;
 }
 
 /* Container cho UsageGuide */
@@ -544,6 +616,7 @@ textarea:focus {
   border-color: #007bff;
   box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
 }
+
 .guide-footer a:hover {
   color: #0056b3;
   text-decoration: underline;
