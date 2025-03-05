@@ -58,13 +58,12 @@ const checkImageQuality = (file: File): Promise<{ isValid: boolean; message: str
     img.onload = () => {
       const width = img.width;
       const height = img.height;
-      const fileSizeKB = file.size / 1024; // Kích thước file tính bằng KB
+      const fileSizeKB = file.size / 1024;
       const format = file.type.split('/')[1].toLowerCase();
 
-      // Tiêu chí chất lượng
       const minWidth = 800;
       const minHeight = 600;
-      const maxFileSizeKB = 5000; // 5MB
+      const maxFileSizeKB = 5000;
       const allowedFormats = ['jpg', 'jpeg', 'png'];
 
       if (width < minWidth || height < minHeight) {
@@ -205,7 +204,7 @@ export default function CaslaQuartzImageGenerator() {
   };
 
   const pollJobStatus = async (jobId: string): Promise<string> => {
-    const maxAttempts = 36; // 3 phút với 5s mỗi lần kiểm tra
+    const maxAttempts = 36;
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       const response = await axios.get(`${TENSOR_ART_API_URL}/jobs/${jobId}`, { headers });
       const { status, successInfo, failedInfo } = response.data.job;
@@ -250,12 +249,12 @@ export default function CaslaQuartzImageGenerator() {
         const reader = new FileReader();
         reader.onloadend = () => {
           setUploadedImage(reader.result as string);
-          setError(null); // Xóa lỗi nếu có
+          setError(null);
         };
         reader.readAsDataURL(file);
       } else {
-        setUploadedImage(null); // Xóa ảnh nếu không đạt
-        setError(message); // Hiển thị thông báo lỗi
+        setUploadedImage(null);
+        setError(message);
       }
     }
   };
@@ -357,7 +356,7 @@ export default function CaslaQuartzImageGenerator() {
         },
         '10': {
           classType: 'Image Seamless Texture',
-          inputs: { images: ['17', 0], blending: 0.4, tiled: 'true', tiles: 2 },
+          inputs: { images: ['17', 0], blending: 0.2, tiled: 'true', tiles: 2 }, // Giảm blending để giữ chi tiết
           properties: { 'Node name for S&R': 'Image Seamless Texture' },
         },
         '70': {
@@ -367,7 +366,7 @@ export default function CaslaQuartzImageGenerator() {
             grounding_dino_model: ['72', 0],
             image: ['66', 0],
             prompt: position.toLowerCase(),
-            threshold: 0.3,
+            threshold: 0.5, // Tăng threshold để segment chính xác hơn
           },
           properties: { 'Node name for S&R': 'GroundingDinoSAMSegment (segment anything)' },
         },
@@ -375,9 +374,9 @@ export default function CaslaQuartzImageGenerator() {
           classType: 'MaskFix+',
           inputs: {
             mask: ['70', 1],
-            erode: 5,
-            dilate: 17,
-            blur: 12,
+            erode: 2,  // Giảm erode để giữ đường biên
+            dilate: 10, // Giảm dilate để tránh làm mờ quá mức
+            blur: 8,   // Giảm blur để giữ chi tiết
             threshold: 4,
             invert: 0,
           },
