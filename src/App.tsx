@@ -383,7 +383,7 @@ export default function CaslaQuartzImageGenerator() {
           classType: 'LayerMask: MaskEdgeShrink',
           inputs: { 
             mask: ['111', 1],
-            invert: true,
+            invert: false,
             erode: 1,
             dilate: 4,
             blur: 1,
@@ -438,7 +438,7 @@ export default function CaslaQuartzImageGenerator() {
             dilate: 4,
             blur: 12,
             threshold: 9,
-            invert: 101
+            invert: 0  // Đổi từ 101 về 0 để tránh đảo ngược mask
           },
           properties: { 'Node name for S&R': 'MaskFix+' },
         },
@@ -660,7 +660,7 @@ export default function CaslaQuartzImageGenerator() {
                     </div>
                   </div>
                   <button
-                    className="generate-button"
+                    classType="generate-button"
                     onClick={processText2Img}
                     disabled={loading || !prompt || text2imgSelectedProducts.length === 0}
                   >
