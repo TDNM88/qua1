@@ -9,7 +9,7 @@ type Product = string;
 
 const TENSOR_ART_API_URL = "https://ap-east-1.tensorart.cloud/v1";
 
-// Danh sách sản phẩm (từ Python)
+// Danh sách sản phẩm
 const PRODUCTS = [
   "C1012 Glacier White", "C1026 Polar", "C3269 Ash Grey", "C3168 Silver Wave", "C1005 Milky White",
   "C2103 Onyx Carrara", "C2104 Massa", "C3105 Casla Cloudy", "C3146 Casla Nova", "C2240 Marquin",
@@ -19,7 +19,7 @@ const PRODUCTS = [
   "C4221 Athena", "C4255 Calacatta Extra"
 ];
 
-// Bản đồ ảnh sản phẩm (giả định nằm trong public/product_images)
+// Bản đồ ảnh sản phẩm
 const PRODUCT_IMAGE_MAP: { [key: string]: string } = {
   "C1012 Glacier White": `${process.env.PUBLIC_URL}/product_images/C1012.jpg`,
   "C1026 Polar": `${process.env.PUBLIC_URL}/product_images/C1026.jpg`,
@@ -47,6 +47,61 @@ const PRODUCT_IMAGE_MAP: { [key: string]: string } = {
   "C4342 Casla Eternal": `${process.env.PUBLIC_URL}/product_images/C4342.jpg`,
   "C4221 Athena": `${process.env.PUBLIC_URL}/product_images/C4221.jpg`,
   "C4255 Calacatta Extra": `${process.env.PUBLIC_URL}/product_images/C4255.jpg`,
+};
+
+// Hàm kiểm tra chất lượng ảnh
+const checkImageQuality = (file: File): Promise<{ isValid: boolean; message: string }> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+
+    img.onload = () => {
+      const width = img.width;
+      const height = img.height;
+      const fileSizeKB = file.size / 1024; // Kích thước file tính bằng KB
+      const format = file.type.split('/')[1].toLowerCase();
+
+      // Tiêu chí chất lượng
+      const minWidth = 800;
+      const minHeight = 600;
+      const maxFileSizeKB = 5000; // 5MB
+      const allowedFormats = ['jpg', 'jpeg', 'png'];
+
+      if (width < minWidth || height < minHeight) {
+        resolve({
+          isValid: false,
+          message: `Độ phân giải quá thấp (${width}x${height}). Yêu cầu tối thiểu: ${minWidth}x${minHeight}.`,
+        });
+      } else if (!allowedFormats.includes(format)) {
+        resolve({
+          isValid: false,
+          message: 'Định dạng không được hỗ trợ. Chỉ chấp nhận: JPG, PNG.',
+        });
+      } else if (fileSizeKB > maxFileSizeKB) {
+        resolve({
+          isValid: false,
+          message: `Kích thước file quá lớn (${fileSizeKB.toFixed(2)}KB). Tối đa: ${maxFileSizeKB}KB.`,
+        });
+      } else {
+        resolve({
+          isValid: true,
+          message: 'Ảnh đạt yêu cầu.',
+        });
+      }
+
+      URL.revokeObjectURL(url);
+    };
+
+    img.onerror = () => {
+      resolve({
+        isValid: false,
+        message: 'Không thể tải ảnh. Vui lòng thử lại.',
+      });
+      URL.revokeObjectURL(url);
+    };
+
+    img.src = url;
+  });
 };
 
 export default function CaslaQuartzImageGenerator() {
@@ -187,22 +242,40 @@ export default function CaslaQuartzImageGenerator() {
     setError(null);
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => setUploadedImage(reader.result as string);
-      reader.readAsDataURL(file);
+      const { isValid, message } = await checkImageQuality(file);
+      if (isValid) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setUploadedImage(reader.result as string);
+          setError(null); // Xóa lỗi nếu có
+        };
+        reader.readAsDataURL(file);
+      } else {
+        setUploadedImage(null); // Xóa ảnh nếu không đạt
+        setError(message); // Hiển thị thông báo lỗi
+      }
     }
   };
 
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const file = e.dataTransfer.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => setUploadedImage(reader.result as string);
-      reader.readAsDataURL(file);
+      const { isValid, message } = await checkImageQuality(file);
+      if (isValid) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setUploadedImage(reader.result as string);
+          setError(null);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        setUploadedImage(null);
+        setError(message);
+      }
     }
   };
 
