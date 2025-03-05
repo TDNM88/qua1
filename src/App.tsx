@@ -322,78 +322,125 @@ export default function CaslaQuartzImageGenerator() {
       const workflowParams = {
         '122': {
           classType: 'LayerMask: LoadSegmentAnythingModels',
-          inputs: {},
+          inputs: { 
+            model_name: 'sam_hq_vit_l (1.25GB)', 
+            grounding_dino_model_name: 'GroundingDINO_SwinT_OGC (694MB)' 
+          },
           properties: { 'Node name for S&R': 'LayerMask: LoadSegmentAnythingModels' },
-          widgets_values: ['sam_hq_vit_l (1.25GB)', 'GroundingDINO_SwinT_OGC (694MB)'],
         },
         '111': {
           classType: 'LayerMask: MaskEdgeUltraDetail',
           inputs: { 
             image: ['124', 0], 
-            mask: ['126', 0] 
+            mask: ['126', 0],
+            method: 'PyMatting',
+            erode: 0,
+            dilate: 0,
+            opacity: 0.75,
+            blur: 5,
+            min_confidence: 0.01,
+            max_confidence: 0.99
           },
           properties: { 'Node name for S&R': 'LayerMask: MaskEdgeUltraDetail' },
-          widgets_values: ['PyMatting', 0, 0, 0.75, 5, 0.01, 0.99],
         },
         '121': {
           classType: 'LayerMask: SegmentAnythingUltra V3',
           inputs: { 
             image: ['124', 0], 
             sam_models: ['122', 0], 
-            prompt: position.toLowerCase() 
+            prompt: position.toLowerCase(),
+            threshold: 0.31,
+            matte_type: 'VITMatte',
+            erode: 6,
+            dilate: 2,
+            min_confidence: 0.15,
+            max_confidence: 0.99,
+            refine: true,
+            refine_type: 'subject',
+            device: 'cuda',
+            refine_steps: 2
           },
           properties: { 'Node name for S&R': 'LayerMask: SegmentAnythingUltra V3' },
-          widgets_values: [0.31, 'VITMatte', 6, 2, 0.15, 0.99, true, 'subject', 'cuda', 2],
         },
         '117': {
           classType: 'CR Text',
-          inputs: {},
+          inputs: { 
+            text: position.toLowerCase() 
+          },
           properties: { 'Node name for S&R': 'CR Text' },
-          widgets_values: [position.toLowerCase()],
         },
         '127': {
           classType: 'Image Seamless Texture',
-          inputs: { images: ['125', 0] },
+          inputs: { 
+            images: ['125', 0],
+            blending: 0.4,
+            tiled: 'true',
+            tiles: 4
+          },
           properties: { 'Node name for S&R': 'Image Seamless Texture' },
-          widgets_values: [0.4, 'true', 4],
         },
         '123': {
           classType: 'LayerMask: MaskEdgeShrink',
-          inputs: { mask: ['111', 1] },
+          inputs: { 
+            mask: ['111', 1],
+            invert: false,
+            erode: 1,
+            dilate: 4,
+            blur: 1,
+            threshold: 64
+          },
           properties: { 'Node name for S&R': 'LayerMask: MaskEdgeShrink' },
-          widgets_values: [false, 1, 4, 1, 64],
         },
         '130': {
           classType: 'SaveImage',
-          inputs: { images: ['129', 0] },
+          inputs: { 
+            images: ['129', 0],
+            filename_prefix: 'TensorArt'
+          },
           properties: {},
-          widgets_values: ['TensorArt'],
         },
         '129': {
           classType: 'BlendInpaint',
           inputs: { 
             inpaint: ['127', 0], 
             original: ['124', 0], 
-            mask: ['123', 0] 
+            mask: ['123', 0],
+            feather: 10,
+            blend: 10
           },
           properties: { 'Node name for S&R': 'BlendInpaint' },
-          widgets_values: [10, 10],
         },
         '125': {
           classType: 'TensorArt_LoadImage',
-          inputs: { _height: height, _width: width, image: textureResourceId, upload: 'image' },
+          inputs: { 
+            _height: height, 
+            _width: width, 
+            image: textureResourceId, 
+            upload: 'image' 
+          },
           properties: { 'Node name for S&R': 'TensorArt_LoadImage' },
         },
         '124': {
           classType: 'TensorArt_LoadImage',
-          inputs: { _height: height, _width: width, image: imageResourceId, upload: 'image' },
+          inputs: { 
+            _height: height, 
+            _width: width, 
+            image: imageResourceId, 
+            upload: 'image' 
+          },
           properties: { 'Node name for S&R': 'TensorArt_LoadImage' },
         },
         '126': {
           classType: 'MaskFix+',
-          inputs: { mask: ['121', 1] },
+          inputs: { 
+            mask: ['121', 1],
+            erode: 2,
+            dilate: 4,
+            blur: 12,
+            threshold: 9,
+            invert: 101
+          },
           properties: { 'Node name for S&R': 'MaskFix+' },
-          widgets_values: [2, 4, 12, 9, 101],
         },
       };
 
