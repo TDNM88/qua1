@@ -150,11 +150,6 @@ export default function CaslaQuartzImageGenerator() {
     };
 
     try {
-      console.log('API Key:', apiKey);
-      console.log('URL:', url);
-      console.log('Headers:', headers);
-      console.log('Payload:', payload);
-
       const response = await fetch(url, {
         method: 'POST',
         headers,
@@ -162,8 +157,6 @@ export default function CaslaQuartzImageGenerator() {
       });
 
       const responseText = await response.text();
-      console.log('Response:', response.status, responseText);
-
       if (!response.ok) {
         throw new Error(`POST failed: ${response.status} - ${responseText}`);
       }
@@ -177,25 +170,18 @@ export default function CaslaQuartzImageGenerator() {
         throw new Error(`Invalid response: ${JSON.stringify(resourceResponse)}`);
       }
 
-      console.log('Put URL:', putUrl);
       const imageBlob = await (await fetch(imageData)).blob();
-      console.log('Image Blob:', { size: imageBlob.size, type: imageBlob.type });
-
       const putResponse = await fetch(putUrl, {
         method: 'PUT',
         headers: putHeaders,
         body: imageBlob,
       });
 
-      const putResponseText = await putResponse.text();
-      console.log('PUT Response:', putResponse.status, putResponseText);
-
       if (![200, 203].includes(putResponse.status)) {
-        throw new Error(`PUT failed: ${putResponse.status} - ${putResponseText}`);
+        throw new Error(`PUT failed: ${putResponse.status} - ${await putResponse.text()}`);
       }
 
       await new Promise((resolve) => setTimeout(resolve, 10000));
-      console.log('Upload successful - resourceId:', resourceId);
       return resourceId;
     } catch (error) {
       console.error('Upload error:', error);
@@ -304,7 +290,6 @@ export default function CaslaQuartzImageGenerator() {
       return;
     }
 
-    console.log('Starting processImg2Img, setting loading to true');
     setGeneratedImage(null);
     setProgress(0);
     setCurrentQuote(0);
@@ -320,127 +305,49 @@ export default function CaslaQuartzImageGenerator() {
 
       const [width, height] = img2imgSize.split('x').map(Number);
       const workflowParams = {
-        '122': {
-          classType: 'LayerMask: LoadSegmentAnythingModels',
-          inputs: { 
-            model_name: 'sam_hq_vit_l (1.25GB)', 
-            grounding_dino_model_name: 'GroundingDINO_SwinT_OGC (694MB)' 
-          },
-          properties: { 'Node name for S&R': 'LayerMask: LoadSegmentAnythingModels' },
+        "111": {
+          classType: "LayerMask: MaskEdgeUltraDetail",
+          inputs: { mask: ["126", 0], image: ["124", 0], method: "PyMatting", fix_gap: 0, mask_grow: 0, black_point: 0.01, white_point: 0.99, detail_range: 5, fix_threshold: 0.75 },
         },
-        '111': {
-          classType: 'LayerMask: MaskEdgeUltraDetail',
-          inputs: { 
-            image: ['124', 0], 
-            mask: ['126', 0],
-            method: 'PyMatting',
-            erode: 0,
-            dilate: 0,
-            opacity: 0.75,
-            blur: 5,
-            min_confidence: 0.01,
-            max_confidence: 0.99
-          },
-          properties: { 'Node name for S&R': 'LayerMask: MaskEdgeUltraDetail' },
+        "117": {
+          classType: "CR Text",
+          inputs: { text: `${position.toLowerCase()}\n\n` },
         },
-        '121': {
-          classType: 'LayerMask: SegmentAnythingUltra V3',
-          inputs: { 
-            image: ['124', 0], 
-            sam_models: ['122', 0], 
-            prompt: position.toLowerCase(),
-            threshold: 0.31,
-            matte_type: 'VITMatte',
-            erode: 6,
-            dilate: 2,
-            min_confidence: 0.15,
-            max_confidence: 0.99,
-            refine: true,
-            refine_type: 'subject',
-            device: 'cuda',
-            refine_steps: 2
-          },
-          properties: { 'Node name for S&R': 'LayerMask: SegmentAnythingUltra V3' },
+        "121": {
+          classType: "LayerMask: SegmentAnythingUltra V3",
+          inputs: { image: ["124", 0], device: "cuda", prompt: ["117", 0], threshold: 0.31, sam_models: ["122", 0], black_point: 0.15, white_point: 0.99, detail_erode: 6, detail_dilate: 2, detail_method: "VITMatte", max_megapixels: 2, process_detail: true },
         },
-        '117': {
-          classType: 'CR Text',
-          inputs: { 
-            text: position.toLowerCase() 
-          },
-          properties: { 'Node name for S&R': 'CR Text' },
+        "122": {
+          classType: "LayerMask: LoadSegmentAnythingModels",
+          inputs: { sam_model: "sam_hq_vit_l (1.25GB)", grounding_dino_model: "GroundingDINO_SwinT_OGC (694MB)" },
         },
-        '127': {
-          classType: 'Image Seamless Texture',
-          inputs: { 
-            images: ['125', 0],
-            blending: 0.4,
-            tiled: "true",  // Sửa từ true sang "true"
-            tiles: 4
-          },
-          properties: { 'Node name for S&R': 'Image Seamless Texture' },
+        "123": {
+          classType: "LayerMask: MaskEdgeShrink",
+          inputs: { mask: ["111", 1], soft: 4, edge_shrink: 1, invert_mask: false, edge_reserve: 64, shrink_level: 1 },
         },
-        '123': {
-          classType: 'LayerMask: MaskEdgeShrink',
-          inputs: { 
-            mask: ['111', 1],
-            invert: false,
-            shrink_level: 1,
-            soft: 4,
-            edge_shrink: 1,
-            edge_reserve: 64
-          },
-          properties: { 'Node name for S&R': 'LayerMask: MaskEdgeShrink' },
+        "124": {
+          classType: "TensorArt_LoadImage",
+          inputs: { _height: height, _width: width, image: imageResourceId, upload: "image" },
         },
-        '130': {
-          classType: 'SaveImage',
-          inputs: { 
-            images: ['129', 0],
-            filename_prefix: 'TensorArt'
-          },
-          properties: {},
+        "125": {
+          classType: "TensorArt_LoadImage",
+          inputs: { _height: 768, _width: 512, image: textureResourceId, upload: "image" },
         },
-        '129': {
-          classType: 'BlendInpaint',
-          inputs: { 
-            inpaint: ['127', 0], 
-            original: ['124', 0], 
-            mask: ['123', 0],
-            feather: 10,
-            blend: 10
-          },
-          properties: { 'Node name for S&R': 'BlendInpaint' },
+        "126": {
+          classType: "MaskFix+",
+          inputs: { blur: 100, mask: ["121", 1], smooth: 9, fill_holes: 4, erode_dilate: 2, remove_isolated_pixels: 12 },
         },
-        '125': {
-          classType: 'TensorArt_LoadImage',
-          inputs: { 
-            _height: height, 
-            _width: width, 
-            image: textureResourceId, 
-            upload: 'image' 
-          },
-          properties: { 'Node name for S&R': 'TensorArt_LoadImage' },
+        "127": {
+          classType: "Image Seamless Texture",
+          inputs: { tiled: "true", tiles: 4, images: ["125", 0], blending: 0.4 },
         },
-        '124': {
-          classType: 'TensorArt_LoadImage',
-          inputs: { 
-            _height: height, 
-            _width: width, 
-            image: imageResourceId, 
-            upload: 'image' 
-          },
-          properties: { 'Node name for S&R': 'TensorArt_LoadImage' },
+        "129": {
+          classType: "BlendInpaint",
+          inputs: { mask: ["123", 0], sigma: 10, kernel: 10, inpaint: ["127", 0], original: ["124", 0] },
         },
-        '126': {
-          classType: 'MaskFix+',
-          inputs: { 
-            mask: ['121', 1],
-            erode_dilate: 2,
-            fill_holes: 4,
-            remove_isolated_pixels: 12,
-            smooth: 9,
-            blur: 100
-          },
-          properties: { 'Node name for S&R': 'MaskFix+' },
+        "130": {
+          classType: "SaveImage",
+          inputs: { images: ["129", 0], filename_prefix: "TensorArt" },
         },
       };
 
@@ -456,7 +363,6 @@ export default function CaslaQuartzImageGenerator() {
       setError(`Có lỗi xảy ra khi tạo ảnh: ${(err as Error).message}`);
       console.error(err);
     } finally {
-      console.log('Finished processImg2Img, setting loading to false');
       setLoading(false);
     }
   };
@@ -467,7 +373,6 @@ export default function CaslaQuartzImageGenerator() {
       return;
     }
 
-    console.log('Starting processText2Img, setting loading to true');
     setGeneratedImage(null);
     setProgress(0);
     setCurrentQuote(0);
@@ -509,36 +414,21 @@ export default function CaslaQuartzImageGenerator() {
       setError(`Có lỗi xảy ra khi tạo ảnh: ${(err as Error).message}`);
       console.error(err);
     } finally {
-      console.log('Finished processText2Img, setting loading to false');
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    console.log('useEffect triggered, loading:', loading);
     let interval: NodeJS.Timeout;
     if (loading) {
-      console.log('Starting interval for progress and quotes');
       interval = setInterval(() => {
-        setProgress((prev) => {
-          const newProgress = prev >= 100 ? 100 : prev + 1;
-          console.log('Progress updated:', newProgress);
-          return newProgress;
-        });
-        setCurrentQuote((prev) => {
-          const newQuote = (prev + 1) % quotes.length;
-          console.log('Quote updated:', quotes[newQuote]);
-          return newQuote;
-        });
+        setProgress((prev) => (prev >= 100 ? 100 : prev + 1));
+        setCurrentQuote((prev) => (prev + 1) % quotes.length);
       }, 400);
     }
-    return () => {
-      console.log('Cleaning up interval');
-      clearInterval(interval);
-    };
+    return () => clearInterval(interval);
   }, [loading]);
 
-  console.log('Rendering CaslaQuartzImageGenerator');
   return (
     <div className="app-container">
       <div className="overlay">
@@ -671,7 +561,6 @@ export default function CaslaQuartzImageGenerator() {
             </div>
             <div className="output-area">
               {(() => {
-                console.log('Rendering output-area, generatedImage:', generatedImage, 'loading:', loading, 'error:', error);
                 if (error) {
                   return (
                     <div className="error-message">
