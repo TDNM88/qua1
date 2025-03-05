@@ -387,22 +387,24 @@ export default function CaslaQuartzImageGenerator() {
           inputs: { mask: ['101', 0] },
           properties: { 'Node name for S&R': 'MaskToImage' },
         },
+        // Thay Paste By Mask bằng Image Blend By Mask
         '13': {
-          classType: 'Paste By Mask',
+          classType: 'Image Blend By Mask',
           inputs: {
-            image_base: ['66', 0],
-            image_to_paste: ['10', 0],
-            mask: ['73', 0],
-            resize_behavior: 'resize'
+            image_base: ['66', 0], // Ảnh gốc (sau khi upscale)
+            image_to_paste: ['10', 0], // Seamless texture
+            mask: ['73', 0], // Mask từ MaskToImage
+            blend_percentage: 0.7, // Tỷ lệ blending (có thể điều chỉnh, 0.7 để giữ chi tiết gốc nhiều hơn)
+            blend_mode: 'overlay', // Chế độ blending, có thể thử 'normal' hoặc 'add' nếu cần
           },
-          properties: { 'Node name for S&R': 'Paste By Mask' },
+          properties: { 'Node name for S&R': 'Image Blend By Mask' },
         },
         // Thêm bước hậu xử lý với tên node và tham số phù hợp
         '54': {
           classType: 'Image Canny Filter',
           inputs: {
             images: ['66', 0], // Dùng ảnh gốc đã upscale để phát hiện cạnh
-            enable_threshold: "false", // Sửa từ boolean `false` thành chuỗi "false"
+            enable_threshold: "false", // Sử dụng ngưỡng tự động (chuỗi "false")
             threshold_low: 0.1, // Giá trị ngưỡng thấp hợp lý
             threshold_high: 0.3, // Giá trị ngưỡng cao hợp lý
           },
