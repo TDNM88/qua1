@@ -374,7 +374,7 @@ export default function CaslaQuartzImageGenerator() {
           inputs: { 
             images: ['125', 0],
             blending: 0.4,
-            tiled: 'true',
+            tiled: true,
             tiles: 4
           },
           properties: { 'Node name for S&R': 'Image Seamless Texture' },
@@ -384,10 +384,10 @@ export default function CaslaQuartzImageGenerator() {
           inputs: { 
             mask: ['111', 1],
             invert: false,
-            erode: 1,
-            dilate: 4,
-            blur: 1,
-            threshold: 64
+            shrink_level: 1,
+            soft: 4,
+            edge_shrink: 1,
+            edge_reserve: 64
           },
           properties: { 'Node name for S&R': 'LayerMask: MaskEdgeShrink' },
         },
@@ -434,11 +434,11 @@ export default function CaslaQuartzImageGenerator() {
           classType: 'MaskFix+',
           inputs: { 
             mask: ['121', 1],
-            erode: 2,
-            dilate: 4,
-            blur: 12,
-            threshold: 9,
-            invert: 0  // Đổi từ 101 về 0 để tránh đảo ngược mask
+            erode_dilate: 2,
+            fill_holes: 4,
+            remove_isolated_pixels: 12,
+            smooth: 9,
+            blur: 100
           },
           properties: { 'Node name for S&R': 'MaskFix+' },
         },
@@ -660,7 +660,7 @@ export default function CaslaQuartzImageGenerator() {
                     </div>
                   </div>
                   <button
-                    classType="generate-button"
+                    className="generate-button"
                     onClick={processText2Img}
                     disabled={loading || !prompt || text2imgSelectedProducts.length === 0}
                   >
