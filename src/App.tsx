@@ -103,6 +103,254 @@ const checkImageQuality = (file: File): Promise<{ isValid: boolean; message: str
   });
 };
 
+// Workflow JSON từ TensorArt
+const WORKFLOW_JSON = {
+  "last_node_id": 123,
+  "last_link_id": 66,
+  "nodes": [
+    {
+      "id": 108,
+      "type": "BlendInpaint",
+      "pos": { "0": 418, "1": 470 },
+      "size": { "0": 315, "1": 142 },
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        { "name": "inpaint", "type": "IMAGE", "link": 24, "label": "inpaint" },
+        { "name": "original", "type": "IMAGE", "link": 32, "label": "original" },
+        { "name": "mask", "type": "MASK", "link": 66, "label": "mask" },
+        { "name": "origin", "type": "VECTOR", "link": null, "label": "origin" }
+      ],
+      "outputs": [
+        { "name": "image", "type": "IMAGE", "links": [26], "shape": 3, "label": "image", "slot_index": 0 },
+        { "name": "MASK", "type": "MASK", "links": null, "shape": 3, "label": "MASK" }
+      ],
+      "properties": { "Node name for S&R": "BlendInpaint" },
+      "widgets_values": [10, 10]
+    },
+    {
+      "id": 10,
+      "type": "Image Seamless Texture",
+      "pos": { "0": -53, "1": 469 },
+      "size": { "0": 315, "1": 166 },
+      "flags": {},
+      "order": 5,
+      "mode": "RUN",
+      "inputs": [
+        { "name": "images", "value": [17, 0], "label": "images", "link": 11 },
+        { "name": "blending", "value": 0.2, "label": "blending" },
+        { "name": "tiled", "value": "true", "label": "tiled" },
+        { "name": "tiles", "value": 2, "label": "tiles" }
+      ],
+      "outputs": [
+        { "name": "images", "type": "IMAGE", "links": [24], "shape": 3, "label": "images", "slot_index": 0 }
+      ],
+      "properties": { "Node name for S&R": "Image Seamless Texture" },
+      "widgets_values": [0.4, "true", 4]
+    },
+    {
+      "id": 122,
+      "type": "LayerMask: LoadSegmentAnythingModels",
+      "pos": { "0": -899, "1": 1101 },
+      "size": { "0": 592.199951171875, "1": 82 },
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        { "name": "sam_models", "type": "LS_SAM_MODELS", "links": [58], "shape": 3, "label": "sam_models" }
+      ],
+      "properties": { "Node name for S&R": "LayerMask: LoadSegmentAnythingModels" },
+      "widgets_values": ["sam_hq_vit_l (1.25GB)", "GroundingDINO_SwinT_OGC (694MB)"]
+    },
+    {
+      "id": 43,
+      "type": "TensorArt_LoadImage",
+      "pos": { "0": -768, "1": 143 },
+      "size": [315, 354],
+      "flags": {},
+      "order": 1,
+      "mode": "RUN",
+      "inputs": [
+        { "name": "_height", "value": "height", "label": "_height" },
+        { "name": "_width", "value": "width", "label": "_width" },
+        { "name": "image", "value": "imageResourceId", "label": "image" },
+        { "name": "upload", "value": "image", "label": "upload" }
+      ],
+      "outputs": [
+        { "name": "IMAGE", "type": "IMAGE", "links": [32, 33, 57], "shape": 3, "label": "IMAGE", "slot_index": 0 },
+        { "name": "MASK", "type": "MASK", "links": null, "shape": 3, "label": "MASK" }
+      ],
+      "properties": { "Node name for S&R": "TensorArt_LoadImage" },
+      "widgets_values": ["https://7022ae40757f8d53295a57619de9b364.r2.cloudflarestorage.com/tensor-sf-sig/workspace/workflow_image2image/637285499601470901/70b41078-9517-45aa-87f2-796382831a23.jpg", "image"]
+    },
+    {
+      "id": 101,
+      "type": "MaskFix+",
+      "pos": { "0": -166, "1": 67 },
+      "size": { "0": 315, "1": 254 },
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        { "name": "mask", "value": [70, 1], "label": "mask", "link": 60 },
+        { "name": "erode", "value": 2, "label": "erode" },
+        { "name": "dilate", "value": 10, "label": "dilate" },
+        { "name": "blur", "value": 8, "label": "blur" },
+        { "name": "threshold", "value": 4, "label": "threshold" },
+        { "name": "invert", "value": 0, "label": "invert" }
+      ],
+      "outputs": [
+        { "name": "MASK", "type": "MASK", "links": [64], "shape": 3, "label": "MASK", "slot_index": 0 }
+      ],
+      "properties": { "Node name for S&R": "MaskFix+" },
+      "widgets_values": [2, 4, 12, 9, 101]
+    },
+    {
+      "id": 111,
+      "type": "LayerMask: MaskEdgeUltraDetail",
+      "pos": { "0": 208, "1": 149 },
+      "size": { "0": 378, "1": 222 },
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        { "name": "image", "type": "IMAGE", "link": 33, "label": "image" },
+        { "name": "mask", "type": "MASK", "link": 64, "label": "mask" }
+      ],
+      "outputs": [
+        { "name": "image", "type": "IMAGE", "links": null, "shape": 3, "label": "image" },
+        { "name": "mask", "type": "MASK", "links": [65], "shape": 3, "label": "mask", "slot_index": 1 }
+      ],
+      "properties": { "Node name for S&R": "LayerMask: MaskEdgeUltraDetail" },
+      "widgets_values": ["PyMatting", 0, 0, 0.75, 5, 0.01, 0.99]
+    },
+    {
+      "id": 121,
+      "type": "LayerMask: SegmentAnythingUltra V3",
+      "pos": { "0": -76, "1": 1020 },
+      "size": [541.800048828125, 294],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        { "name": "image", "type": "IMAGE", "link": 57, "label": "image" },
+        { "name": "sam_models", "type": "LS_SAM_MODELS", "link": 58, "label": "sam_models" },
+        { "name": "prompt", "type": "STRING", "link": 59, "widget": { "name": "prompt" } }
+      ],
+      "outputs": [
+        { "name": "image", "type": "IMAGE", "links": null, "shape": 3, "label": "image" },
+        { "name": "mask", "type": "MASK", "links": [60], "shape": 3, "label": "mask", "slot_index": 1 }
+      ],
+      "properties": { "Node name for S&R": "LayerMask: SegmentAnythingUltra V3" },
+      "widgets_values": [0.31, "VITMatte", 6, 2, 0.15, 0.99, true, "subject", "cuda", 2]
+    },
+    {
+      "id": 117,
+      "type": "CR Text",
+      "pos": { "0": -942, "1": 708 },
+      "size": { "0": 400, "1": 200 },
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        { "name": "text", "type": "*", "links": [59], "shape": 3, "label": "text", "slot_index": 0 },
+        { "name": "show_help", "type": "STRING", "links": null, "shape": 3, "label": "show_help" }
+      ],
+      "properties": { "Node name for S&R": "CR Text" },
+      "widgets_values": ["countertop\n\n"]
+    },
+    {
+      "id": 7,
+      "type": "PreviewImage",
+      "pos": { "0": 827, "1": 211 },
+      "size": [430.17057511409485, 356.70581141385856],
+      "flags": {},
+      "order": 10,
+      "mode": "RUN",
+      "inputs": [
+        { "name": "images", "value": [13, 0], "label": "images", "link": 26 }
+      ],
+      "outputs": [],
+      "properties": { "Node name for S&R": "PreviewImage" }
+    },
+    {
+      "id": 123,
+      "type": "LayerMask: MaskEdgeShrink",
+      "pos": { "0": 510, "1": 775 },
+      "size": { "0": 315, "1": 154 },
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        { "name": "mask", "type": "MASK", "link": 65, "label": "mask" }
+      ],
+      "outputs": [
+        { "name": "mask", "type": "MASK", "links": [66], "shape": 3, "label": "mask", "slot_index": 0 }
+      ],
+      "properties": { "Node name for S&R": "LayerMask: MaskEdgeShrink" },
+      "widgets_values": [false, 1, 4, 1, 64]
+    },
+    {
+      "id": 17,
+      "type": "TensorArt_LoadImage",
+      "pos": { "0": -486, "1": 581 },
+      "size": [315, 354],
+      "flags": {},
+      "order": 3,
+      "mode": "RUN",
+      "inputs": [
+        { "name": "_height", "value": 768, "label": "_height" },
+        { "name": "_width", "value": 512, "label": "_width" },
+        { "name": "image", "value": "textureResourceId", "label": "image" },
+        { "name": "upload", "value": "image", "label": "upload" }
+      ],
+      "outputs": [
+        { "name": "IMAGE", "type": "IMAGE", "links": [11], "shape": 3, "label": "IMAGE", "slot_index": 0 },
+        { "name": "MASK", "type": "MASK", "links": null, "shape": 3, "label": "MASK" }
+      ],
+      "properties": { "Node name for S&R": "TensorArt_LoadImage" },
+      "widgets_values": ["https://7022ae40757f8d53295a57619de9b364.r2.cloudflarestorage.com/tensor-sf-sig/workspace/workflow_image2image/637285499601470901/7d2186f6-c4e3-40ed-b9c2-e6db9d3a3b7b.jpg", "image"]
+    }
+  ],
+  "links": [
+    [0, null, null, null, null, null],
+    [1, null, null, null, null, null],
+    [2, null, null, null, null, null],
+    [3, null, null, null, null, null],
+    [4, null, null, null, null, null],
+    [5, null, null, null, null, null],
+    [6, null, null, null, null, null],
+    [7, null, null, null, null, null],
+    [8, null, null, null, null, null],
+    [9, null, null, null, null, null],
+    [10, null, null, null, null, null],
+    [11, 17, 0, 10, 0, "IMAGE"],
+    [24, 10, 0, 108, 0, "IMAGE"],
+    [26, 108, 0, 7, 0, "IMAGE"],
+    [32, 43, 0, 108, 1, "IMAGE"],
+    [33, 43, 0, 111, 0, "IMAGE"],
+    [57, 43, 0, 121, 0, "IMAGE"],
+    [58, 122, 0, 121, 1, "LS_SAM_MODELS"],
+    [59, 117, 0, 121, 2, "STRING"],
+    [60, 121, 1, 101, 0, "MASK"],
+    [64, 101, 0, 111, 1, "MASK"],
+    [65, 111, 1, 123, 0, "MASK"],
+    [66, 123, 0, 108, 2, "MASK"]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.620921323059155,
+      "offset": [750.0038873243635, -152.3075451671954]
+    }
+  },
+  "version": 0.4
+};
+
 export default function CaslaQuartzImageGenerator() {
   const [activeTab, setActiveTab] = useState<TabType>('img2img');
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
@@ -319,116 +567,38 @@ export default function CaslaQuartzImageGenerator() {
       const textureResourceId = await uploadImageToTensorArt(textureFilePath);
 
       const [width, height] = img2imgSize.split('x').map(Number);
-      const workflowParams = {
-        '71': {
-          classType: 'SAMModelLoader (segment anything)',
-          inputs: { model_name: 'sam_vit_b (375MB)' },
-          properties: { 'Node name for S&R': 'SAMModelLoader (segment anything)' },
-        },
-        '72': {
-          classType: 'GroundingDinoModelLoader (segment anything)',
-          inputs: { model_name: 'GroundingDINO_SwinB (938MB)' },
-          properties: { 'Node name for S&R': 'GroundingDinoModelLoader (segment anything)' },
-        },
-        '17': {
-          classType: 'TensorArt_LoadImage',
-          inputs: { _height: 768, _width: 512, image: textureResourceId, upload: 'image' },
-          properties: { 'Node name for S&R': 'TensorArt_LoadImage' },
-        },
-        '43': {
-          classType: 'TensorArt_LoadImage',
-          inputs: { _height: height, _width: width, image: imageResourceId, upload: 'image' },
-          properties: { 'Node name for S&R': 'TensorArt_LoadImage' },
-        },
-        '66': {
-          classType: 'CR Upscale Image',
-          inputs: { image: ['43', 0] },
-          properties: { 'Node name for S&R': 'CR Upscale Image' },
-          widgets_values: [
-            "4x-UltraSharp.pth",
-            "rescale",
-            2,
-            1024,
-            "lanczos",
-            "true",
-            8
-          ],
-        },
-        '10': {
-          classType: 'Image Seamless Texture',
-          inputs: { images: ['17', 0], blending: 0.2, tiled: 'true', tiles: 2 },
-          properties: { 'Node name for S&R': 'Image Seamless Texture' },
-        },
-        '70': {
-          classType: 'GroundingDinoSAMSegment (segment anything)',
-          inputs: {
-            sam_model: ['71', 0],
-            grounding_dino_model: ['72', 0],
-            image: ['66', 0],
-            prompt: position.toLowerCase(),
-            threshold: 0.5,
-          },
-          properties: { 'Node name for S&R': 'GroundingDinoSAMSegment (segment anything)' },
-        },
-        '101': {
-          classType: 'MaskFix+',
-          inputs: {
-            mask: ['70', 1],
-            erode: 2,
-            dilate: 10,
-            blur: 8,
-            threshold: 4,
-            invert: 0,
-          },
-          properties: { 'Node name for S&R': 'MaskFix+' },
-        },
-        '73': {
-          classType: 'MaskToImage',
-          inputs: { mask: ['101', 0] },
-          properties: { 'Node name for S&R': 'MaskToImage' },
-        },
-        // Thay Paste By Mask bằng Image Blend By Mask
-        '13': {
-          classType: 'Image Blend By Mask',
-          inputs: {
-            image_base: ['66', 0], // Ảnh gốc (sau khi upscale)
-            image_to_paste: ['10', 0], // Seamless texture
-            mask: ['73', 0], // Mask từ MaskToImage
-            blend_percentage: 0.7, // Tỷ lệ blending (có thể điều chỉnh, 0.7 để giữ chi tiết gốc nhiều hơn)
-            blend_mode: 'overlay', // Chế độ blending, có thể thử 'normal' hoặc 'add' nếu cần
-          },
-          properties: { 'Node name for S&R': 'Image Blend By Mask' },
-        },
-        // Thêm bước hậu xử lý với tên node và tham số phù hợp
-        '54': {
-          classType: 'Image Canny Filter',
-          inputs: {
-            images: ['66', 0], // Dùng ảnh gốc đã upscale để phát hiện cạnh
-            enable_threshold: "false", // Sử dụng ngưỡng tự động (chuỗi "false")
-            threshold_low: 0.1, // Giá trị ngưỡng thấp hợp lý
-            threshold_high: 0.3, // Giá trị ngưỡng cao hợp lý
-          },
-          properties: { 'Node name for S&R': 'Image Canny Filter' },
-        },
-        '55': {
-          classType: 'Image Blend',
-          inputs: {
-            images: [['13', 0], ['54', 0]], // Sử dụng danh sách images cho cả hai ảnh
-            blend_percentage: 0.3, // Sử dụng 'blend_percentage' thay vì 'blend_factor'
-            blend_mode: 'overlay', // Sử dụng overlay để tăng cường đường biên rõ ràng hơn
-          },
-          properties: { 'Node name for S&R': 'Image Blend' },
-        },
-        '7': {
-          classType: 'PreviewImage',
-          inputs: { images: ['55', 0] }, // Dùng kết quả sau hậu xử lý
-          properties: { 'Node name for S&R': 'PreviewImage' },
-        },
-      };
+
+      // Cập nhật workflow với resource IDs thực tế
+      const updatedWorkflow = JSON.parse(JSON.stringify(WORKFLOW_JSON));
+      updatedWorkflow.nodes.forEach((node: any) => {
+        if (node.id === 43) { // Node TensorArt_LoadImage cho ảnh gốc
+          node.inputs.forEach((input: any) => {
+            if (input.name === "image") {
+              input.value = imageResourceId;
+            }
+            if (input.name === "_height") {
+              input.value = height;
+            }
+            if (input.name === "_width") {
+              input.value = width;
+            }
+          });
+        }
+        if (node.id === 17) { // Node TensorArt_LoadImage cho texture
+          node.inputs.forEach((input: any) => {
+            if (input.name === "image") {
+              input.value = textureResourceId;
+            }
+          });
+        }
+        if (node.id === 117) { // Node CR Text cho prompt
+          node.widgets_values = [position.toLowerCase() + "\n\n"];
+        }
+      });
 
       const response = await axios.post(
         `${TENSOR_ART_API_URL}/jobs/workflow`,
-        { requestId: `workflow_${Date.now()}`, params: workflowParams, runningNotifyUrl: '' },
+        updatedWorkflow,
         { headers }
       );
       const jobId = response.data.job.id;
