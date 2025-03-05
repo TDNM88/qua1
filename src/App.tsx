@@ -374,7 +374,7 @@ export default function CaslaQuartzImageGenerator() {
           inputs: { 
             images: ['125', 0],
             blending: 0.4,
-            tiled: true,
+            tiled: "true",  // Sửa từ true sang "true"
             tiles: 4
           },
           properties: { 'Node name for S&R': 'Image Seamless Texture' },
