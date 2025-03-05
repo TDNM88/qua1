@@ -356,7 +356,7 @@ export default function CaslaQuartzImageGenerator() {
         },
         '10': {
           classType: 'Image Seamless Texture',
-          inputs: { images: ['17', 0], blending: 0.2, tiled: 'true', tiles: 2 }, // Giảm blending để giữ chi tiết
+          inputs: { images: ['17', 0], blending: 0.2, tiled: 'true', tiles: 2 },
           properties: { 'Node name for S&R': 'Image Seamless Texture' },
         },
         '70': {
@@ -366,7 +366,7 @@ export default function CaslaQuartzImageGenerator() {
             grounding_dino_model: ['72', 0],
             image: ['66', 0],
             prompt: position.toLowerCase(),
-            threshold: 0.5, // Tăng threshold để segment chính xác hơn
+            threshold: 0.5,
           },
           properties: { 'Node name for S&R': 'GroundingDinoSAMSegment (segment anything)' },
         },
@@ -374,9 +374,9 @@ export default function CaslaQuartzImageGenerator() {
           classType: 'MaskFix+',
           inputs: {
             mask: ['70', 1],
-            erode: 2,  // Giảm erode để giữ đường biên
-            dilate: 10, // Giảm dilate để tránh làm mờ quá mức
-            blur: 8,   // Giảm blur để giữ chi tiết
+            erode: 2,
+            dilate: 10,
+            blur: 8,
             threshold: 4,
             invert: 0,
           },
@@ -397,9 +397,30 @@ export default function CaslaQuartzImageGenerator() {
           },
           properties: { 'Node name for S&R': 'Paste By Mask' },
         },
+        // Thêm bước hậu xử lý với tên node và tham số phù hợp
+        '54': {
+          classType: 'Image Canny Filter',
+          inputs: {
+            images: ['66', 0], // Dùng ảnh gốc đã upscale để phát hiện cạnh
+            enable_threshold: false, // Sử dụng ngưỡng tự động (phù hợp với hình ảnh bạn gửi)
+            threshold_low: 0.1, // Giá trị ngưỡng thấp hợp lý để phát hiện cạnh
+            threshold_high: 0.3, // Giá trị ngưỡng cao hợp lý
+          },
+          properties: { 'Node name for S&R': 'Image Canny Filter' },
+        },
+        '55': {
+          classType: 'Image Blend',
+          inputs: {
+            image1: ['13', 0], // Ảnh sau khi paste texture
+            image2: ['54', 0], // Bản đồ cạnh từ Canny
+            blend_factor: 0.3, // Giảm độ mạnh blending để giữ chi tiết texture (thay vì 0.50)
+            blend_mode: 'overlay', // Sử dụng overlay để tăng cường đường biên rõ ràng hơn
+          },
+          properties: { 'Node name for S&R': 'Image Blend' },
+        },
         '7': {
           classType: 'PreviewImage',
-          inputs: { images: ['13', 0] },
+          inputs: { images: ['55', 0] }, // Dùng kết quả sau hậu xử lý
           properties: { 'Node name for S&R': 'PreviewImage' },
         },
       };
