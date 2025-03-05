@@ -402,8 +402,8 @@ export default function CaslaQuartzImageGenerator() {
           classType: 'Image Canny Filter',
           inputs: {
             images: ['66', 0], // Dùng ảnh gốc đã upscale để phát hiện cạnh
-            enable_threshold: false, // Sử dụng ngưỡng tự động (phù hợp với hình ảnh bạn gửi)
-            threshold_low: 0.1, // Giá trị ngưỡng thấp hợp lý để phát hiện cạnh
+            enable_threshold: false, // Sử dụng ngưỡng tự động
+            threshold_low: 0.1, // Giá trị ngưỡng thấp hợp lý
             threshold_high: 0.3, // Giá trị ngưỡng cao hợp lý
           },
           properties: { 'Node name for S&R': 'Image Canny Filter' },
@@ -411,9 +411,9 @@ export default function CaslaQuartzImageGenerator() {
         '55': {
           classType: 'Image Blend',
           inputs: {
-            image1: ['13', 0], // Ảnh sau khi paste texture
-            image2: ['54', 0], // Bản đồ cạnh từ Canny
-            blend_factor: 0.3, // Giảm độ mạnh blending để giữ chi tiết texture (thay vì 0.50)
+            image_a: ['13', 0], // Ảnh sau khi paste texture (thay 'image1' bằng 'image_a')
+            image_b: ['54', 0], // Bản đồ cạnh từ Canny (thay 'image2' bằng 'image_b')
+            blend_percentage: 0.3, // Sử dụng 'blend_percentage' thay vì 'blend_factor', giá trị 0.3 để giữ chi tiết texture
             blend_mode: 'overlay', // Sử dụng overlay để tăng cường đường biên rõ ràng hơn
           },
           properties: { 'Node name for S&R': 'Image Blend' },
