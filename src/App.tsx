@@ -383,7 +383,7 @@ export default function CaslaQuartzImageGenerator() {
           classType: 'LayerMask: MaskEdgeShrink',
           inputs: { 
             mask: ['111', 1],
-            invert: false,
+            invert: true,
             erode: 1,
             dilate: 4,
             blur: 1,
