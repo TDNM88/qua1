@@ -106,18 +106,20 @@ const checkImageQuality = (file: File): Promise<{ isValid: boolean; message: str
 // Workflow params theo định dạng object với key là ID node
 const WORKFLOW_PARAMS = {
   "122": {
-    "classType": "LayerMask: LoadSegmentAnythingModels",
-    "inputs": {
+    classType: "LayerMask: LoadSegmentAnythingModels",
+    inputs: {
       "sam_model": "sam_hq_vit_l (1.25GB)",
       "grounding_dino_model": "GroundingDINO_SwinT_OGC (694MB)"
     },
-    "properties": {
-      "Node name for S&R": "LayerMask: LoadSegmentAnythingModels"
-    }
+    properties: { "Node name for S&R": "LayerMask: LoadSegmentAnythingModels" },
+    type: "LayerMask: LoadSegmentAnythingModels",
+    flags: {},
+    order: 0,
+    mode: 0
   },
   "111": {
-    "classType": "LayerMask: MaskEdgeUltraDetail",
-    "inputs": {
+    classType: "LayerMask: MaskEdgeUltraDetail",
+    inputs: {
       "image": [124, 0],
       "mask": [126, 0],
       "method": "PyMatting",
@@ -128,13 +130,15 @@ const WORKFLOW_PARAMS = {
       "trimap_threshold_low": 0.01,
       "trimap_threshold_high": 0.99
     },
-    "properties": {
-      "Node name for S&R": "LayerMask: MaskEdgeUltraDetail"
-    }
+    properties: { "Node name for S&R": "LayerMask: MaskEdgeUltraDetail" },
+    type: "LayerMask: MaskEdgeUltraDetail",
+    flags: {},
+    order: 7,
+    mode: 0
   },
   "123": {
-    "classType": "LayerMask: MaskEdgeShrink",
-    "inputs": {
+    classType: "LayerMask: MaskEdgeShrink",
+    inputs: {
       "mask": [111, 1],
       "invert": false,
       "erode": 1,
@@ -142,32 +146,38 @@ const WORKFLOW_PARAMS = {
       "blur": 1,
       "threshold": 64
     },
-    "properties": {
-      "Node name for S&R": "LayerMask: MaskEdgeShrink"
-    }
+    properties: { "Node name for S&R": "LayerMask: MaskEdgeShrink" },
+    type: "LayerMask: MaskEdgeShrink",
+    flags: {},
+    order: 8,
+    mode: 0
   },
   "7": {
-    "classType": "PreviewImage",
-    "inputs": {
+    classType: "PreviewImage",
+    inputs: {
       "images": [108, 0]
     },
-    "properties": {
-      "Node name for S&R": "PreviewImage"
-    }
+    properties: { "Node name for S&R": "PreviewImage" },
+    type: "PreviewImage",
+    flags: {},
+    order: 10,
+    mode: "RUN"
   },
   "124": {
-    "classType": "TensorArt_LoadImage",
-    "inputs": {
+    classType: "TensorArt_LoadImage",
+    inputs: {
       "image": "imageResourceId",
       "upload": "image"
     },
-    "properties": {
-      "Node name for S&R": "TensorArt_LoadImage"
-    }
+    properties: { "Node name for S&R": "TensorArt_LoadImage" },
+    type: "TensorArt_LoadImage",
+    flags: {},
+    order: 1,
+    mode: 0
   },
   "121": {
-    "classType": "LayerMask: SegmentAnythingUltra V3",
-    "inputs": {
+    classType: "LayerMask: SegmentAnythingUltra V3",
+    inputs: {
       "image": [124, 0],
       "sam_models": [122, 0],
       "prompt": "position.toLowerCase()",
@@ -182,13 +192,15 @@ const WORKFLOW_PARAMS = {
       "device": "cuda",
       "batch_size": 2
     },
-    "properties": {
-      "Node name for S&R": "LayerMask: SegmentAnythingUltra V3"
-    }
+    properties: { "Node name for S&R": "LayerMask: SegmentAnythingUltra V3" },
+    type: "LayerMask: SegmentAnythingUltra V3",
+    flags: {},
+    order: 5,
+    mode: 0
   },
   "126": {
-    "classType": "MaskFix+",
-    "inputs": {
+    classType: "MaskFix+",
+    inputs: {
       "mask": [121, 1],
       "erode": 2,
       "dilate": 4,
@@ -196,35 +208,41 @@ const WORKFLOW_PARAMS = {
       "threshold": 9,
       "invert": 101
     },
-    "properties": {
-      "Node name for S&R": "MaskFix+"
-    }
+    properties: { "Node name for S&R": "MaskFix+" },
+    type: "MaskFix+",
+    flags: {},
+    order: 6,
+    mode: 0
   },
   "125": {
-    "classType": "TensorArt_LoadImage",
-    "inputs": {
+    classType: "TensorArt_LoadImage",
+    inputs: {
       "image": "textureResourceId",
       "upload": "image"
     },
-    "properties": {
-      "Node name for S&R": "TensorArt_LoadImage"
-    }
+    properties: { "Node name for S&R": "TensorArt_LoadImage" },
+    type: "TensorArt_LoadImage",
+    flags: {},
+    order: 2,
+    mode: 0
   },
   "127": {
-    "classType": "Image Seamless Texture",
-    "inputs": {
+    classType: "Image Seamless Texture",
+    inputs: {
       "images": [125, 0],
       "blending": 0.4,
       "tiled": "true",
       "tiles": 4
     },
-    "properties": {
-      "Node name for S&R": "Image Seamless Texture"
-    }
+    properties: { "Node name for S&R": "Image Seamless Texture" },
+    type: "Image Seamless Texture",
+    flags: {},
+    order: 4,
+    mode: 0
   },
   "108": {
-    "classType": "BlendInpaint",
-    "inputs": {
+    classType: "BlendInpaint",
+    inputs: {
       "inpaint": [127, 0],
       "original": [124, 0],
       "mask": [123, 0],
@@ -232,18 +250,22 @@ const WORKFLOW_PARAMS = {
       "padding": 10,
       "feather": 10
     },
-    "properties": {
-      "Node name for S&R": "BlendInpaint"
-    }
+    properties: { "Node name for S&R": "BlendInpaint" },
+    type: "BlendInpaint",
+    flags: {},
+    order: 9,
+    mode: 0
   },
   "117": {
-    "classType": "CR Text",
-    "inputs": {
+    classType: "CR Text",
+    inputs: {
       "text": "position.toLowerCase() + '\n\n'"
     },
-    "properties": {
-      "Node name for S&R": "CR Text"
-    }
+    properties: { "Node name for S&R": "CR Text" },
+    type: "CR Text",
+    flags: {},
+    order: 3,
+    mode: 0
   }
 };
 
@@ -463,126 +485,18 @@ const App: React.FC = () => {
       const textureResourceId = await uploadImageToTensorArt(textureFilePath);
 
       const [width, height] = img2imgSize.split('x').map(Number);
-      const workflowParams = {
-        '122': {
-          classType: 'LayerMask: LoadSegmentAnythingModels',
-          inputs: {
-            "sam_model": "sam_hq_vit_l (1.25GB)",
-            "grounding_dino_model": "GroundingDINO_SwinT_OGC (694MB)"
-          },
-          properties: { 'Node name for S&R': 'LayerMask: LoadSegmentAnythingModels' },
-        },
-        '111': {
-          classType: 'LayerMask: MaskEdgeUltraDetail',
-          inputs: {
-            "image": [124, 0],
-            "mask": [126, 0],
-            "method": "PyMatting",
-            "trimap_dilation": 0,
-            "trimap_erosion": 0,
-            "trimap_blur": 0.75,
-            "trimap_steps": 5,
-            "trimap_threshold_low": 0.01,
-            "trimap_threshold_high": 0.99
-          },
-          properties: { 'Node name for S&R': 'LayerMask: MaskEdgeUltraDetail' },
-        },
-        '123': {
-          classType: 'LayerMask: MaskEdgeShrink',
-          inputs: {
-            "mask": [111, 1],
-            "invert": false,
-            "erode": 1,
-            "dilate": 4,
-            "blur": 1,
-            "threshold": 64
-          },
-          properties: { 'Node name for S&R': 'LayerMask: MaskEdgeShrink' },
-        },
-        '7': {
-          classType: 'PreviewImage',
-          inputs: {
-            "images": [108, 0]
-          },
-          properties: { 'Node name for S&R': 'PreviewImage' },
-        },
-        '124': {
-          classType: 'TensorArt_LoadImage',
-          inputs: {
-            "image": imageResourceId,
-            "upload": "image"
-          },
-          properties: { 'Node name for S&R': 'TensorArt_LoadImage' },
-        },
-        '121': {
-          classType: 'LayerMask: SegmentAnythingUltra V3',
-          inputs: {
-            "image": [124, 0],
-            "sam_models": [122, 0],
-            "prompt": position.toLowerCase(),
-            "threshold": 0.31,
-            "refinement_method": "VITMatte",
-            "refinement_steps": 6,
-            "refinement_dilate": 2,
-            "refinement_threshold_low": 0.15,
-            "refinement_threshold_high": 0.99,
-            "refinement_invert": true,
-            "prompt_default": "subject",
-            "device": "cuda",
-            "batch_size": 2
-          },
-          properties: { 'Node name for S&R': 'LayerMask: SegmentAnythingUltra V3' },
-        },
-        '126': {
-          classType: 'MaskFix+',
-          inputs: {
-            "mask": [121, 1],
-            "erode": 2,
-            "dilate": 4,
-            "blur": 12,
-            "threshold": 9,
-            "invert": 101
-          },
-          properties: { 'Node name for S&R': 'MaskFix+' },
-        },
-        '125': {
-          classType: 'TensorArt_LoadImage',
-          inputs: {
-            "image": textureResourceId,
-            "upload": "image"
-          },
-          properties: { 'Node name for S&R': 'TensorArt_LoadImage' },
-        },
-        '127': {
-          classType: 'Image Seamless Texture',
-          inputs: {
-            "images": [125, 0],
-            "blending": 0.4,
-            "tiled": "true",
-            "tiles": 4
-          },
-          properties: { 'Node name for S&R': 'Image Seamless Texture' },
-        },
-        '108': {
-          classType: 'BlendInpaint',
-          inputs: {
-            "inpaint": [127, 0],
-            "original": [124, 0],
-            "mask": [123, 0],
-            "origin": null,
-            "padding": 10,
-            "feather": 10
-          },
-          properties: { 'Node name for S&R': 'BlendInpaint' },
-        },
-        '117': {
-          classType: 'CR Text',
-          inputs: {
-            "text": position.toLowerCase() + '\n\n'
-          },
-          properties: { 'Node name for S&R': 'CR Text' },
-        },
-      };
+      const workflowParams = JSON.parse(JSON.stringify(WORKFLOW_PARAMS));
+      
+      // Cập nhật các giá trị động
+      workflowParams['124'].inputs.image = imageResourceId;
+      workflowParams['125'].inputs.image = textureResourceId;
+      workflowParams['117'].inputs.text = position.toLowerCase() + '\n\n';
+
+      // Cập nhật kích thước nếu cần (tùy thuộc vào yêu cầu của TensorArt)
+      workflowParams['124'].inputs._height = height;
+      workflowParams['124'].inputs._width = width;
+
+      console.log('Workflow Params:', JSON.stringify(workflowParams, null, 2));
 
       const response = await axios.post(
         `${TENSOR_ART_API_URL}/jobs/workflow`,
@@ -593,6 +507,9 @@ const App: React.FC = () => {
       const imageUrl = await pollJobStatus(jobId);
       setGeneratedImage(imageUrl);
     } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        console.error('Axios Error:', err.response?.data || err.message);
+      }
       setError(`Có lỗi xảy ra khi tạo ảnh: ${(err as Error).message}`);
       console.error(err);
     } finally {
@@ -607,7 +524,7 @@ const App: React.FC = () => {
       return;
     }
 
-    console.log('Starting processText2Img, setting loading to true');
+    console.log('Starting processText2Img, setting loading to false');
     setGeneratedImage(null);
     setProgress(0);
     setCurrentQuote(0);
@@ -731,12 +648,12 @@ const App: React.FC = () => {
                     >
                       <option value="floor">Sàn nhà</option>
                       <option value="wall">Tường</option>
-                      <option value="countertop">countertop</option>
+                      <option value="countertop">Mặt bàn</option>
                       <option value="stair">Cầu thang</option>
                       <option value="tabletop">Mặt bàn</option>
                       <option value="backplash">Tường bếp</option>
                       <option value="counter">Quầy bar</option>
-                      <option value="coffee table">Bàn cafe</option>
+                      <option value="coffeetable">Bàn cafe</option>
                       <option value="custom">Tùy chỉnh</option>
                     </select>
                     {isCustomPosition && (
