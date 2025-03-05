@@ -103,267 +103,148 @@ const checkImageQuality = (file: File): Promise<{ isValid: boolean; message: str
   });
 };
 
-// Workflow JSON từ TensorArt với inputs thay vì widgets_values
-const WORKFLOW_JSON = {
-  "last_node_id": 128,
-  "last_link_id": 75,
-  "nodes": [
-    {
-      "id": 122,
-      "type": "LayerMask: LoadSegmentAnythingModels",
-      "pos": { "0": -899, "1": 1101 },
-      "size": { "0": 592.199951171875, "1": 82 },
-      "flags": {},
-      "order": 0,
-      "mode": 0,
-      "inputs": [
-        { "name": "sam_model", "value": "sam_hq_vit_l (1.25GB)" },
-        { "name": "grounding_dino_model", "value": "GroundingDINO_SwinT_OGC (694MB)" }
-      ],
-      "outputs": [
-        { "name": "sam_models", "type": "LS_SAM_MODELS", "links": [58], "shape": 3, "label": "sam_models" }
-      ],
-      "properties": { "Node name for S&R": "LayerMask: LoadSegmentAnythingModels" }
+// Workflow params theo định dạng object với key là ID node
+const WORKFLOW_PARAMS = {
+  "122": {
+    "classType": "LayerMask: LoadSegmentAnythingModels",
+    "inputs": {
+      "sam_model": "sam_hq_vit_l (1.25GB)",
+      "grounding_dino_model": "GroundingDINO_SwinT_OGC (694MB)"
     },
-    {
-      "id": 111,
-      "type": "LayerMask: MaskEdgeUltraDetail",
-      "pos": { "0": 208, "1": 149 },
-      "size": { "0": 378, "1": 222 },
-      "flags": {},
-      "order": 7,
-      "mode": 0,
-      "inputs": [
-        { "name": "image", "type": "IMAGE", "link": 70, "label": "image" },
-        { "name": "mask", "type": "MASK", "link": 73, "label": "mask" },
-        { "name": "method", "value": "PyMatting" },
-        { "name": "trimap_dilation", "value": 0 },
-        { "name": "trimap_erosion", "value": 0 },
-        { "name": "trimap_blur", "value": 0.75 },
-        { "name": "trimap_steps", "value": 5 },
-        { "name": "trimap_threshold_low", "value": 0.01 },
-        { "name": "trimap_threshold_high", "value": 0.99 }
-      ],
-      "outputs": [
-        { "name": "image", "type": "IMAGE", "links": null, "shape": 3, "label": "image" },
-        { "name": "mask", "type": "MASK", "links": [65], "shape": 3, "label": "mask", "slot_index": 1 }
-      ],
-      "properties": { "Node name for S&R": "LayerMask: MaskEdgeUltraDetail" }
-    },
-    {
-      "id": 123,
-      "type": "LayerMask: MaskEdgeShrink",
-      "pos": { "0": 510, "1": 775 },
-      "size": { "0": 315, "1": 154 },
-      "flags": {},
-      "order": 8,
-      "mode": 0,
-      "inputs": [
-        { "name": "mask", "type": "MASK", "link": 65, "label": "mask" },
-        { "name": "invert", "value": false },
-        { "name": "erode", "value": 1 },
-        { "name": "dilate", "value": 4 },
-        { "name": "blur", "value": 1 },
-        { "name": "threshold", "value": 64 }
-      ],
-      "outputs": [
-        { "name": "mask", "type": "MASK", "links": [66], "shape": 3, "label": "mask", "slot_index": 0 }
-      ],
-      "properties": { "Node name for S&R": "LayerMask: MaskEdgeShrink" }
-    },
-    {
-      "id": 7,
-      "type": "PreviewImage",
-      "pos": { "0": 827, "1": 211 },
-      "size": [430.17057511409485, 356.70581141385856],
-      "flags": {},
-      "order": 10,
-      "mode": "RUN",
-      "inputs": [
-        { "name": "images", "value": [13, 0], "label": "images", "link": 26 }
-      ],
-      "outputs": [],
-      "properties": { "Node name for S&R": "PreviewImage" }
-    },
-    {
-      "id": 124,
-      "type": "TensorArt_LoadImage",
-      "pos": { "0": -1083, "1": 191 },
-      "size": [315, 314],
-      "flags": {},
-      "order": 1,
-      "mode": 0,
-      "inputs": [
-        { "name": "image", "value": "imageResourceId" },
-        { "name": "upload", "value": "image" }
-      ],
-      "outputs": [
-        { "name": "IMAGE", "type": "IMAGE", "links": [68, 69, 70], "shape": 3, "label": "IMAGE", "slot_index": 0 },
-        { "name": "MASK", "type": "MASK", "links": null, "shape": 3, "label": "MASK" }
-      ],
-      "properties": { "Node name for S&R": "TensorArt_LoadImage" }
-    },
-    {
-      "id": 121,
-      "type": "LayerMask: SegmentAnythingUltra V3",
-      "pos": { "0": -76, "1": 1020 },
-      "size": [541.800048828125, 294],
-      "flags": {},
-      "order": 5,
-      "mode": 0,
-      "inputs": [
-        { "name": "image", "type": "IMAGE", "link": 69, "label": "image" },
-        { "name": "sam_models", "type": "LS_SAM_MODELS", "link": 58, "label": "sam_models" },
-        { "name": "prompt", "type": "STRING", "link": 59, "widget": { "name": "prompt" } },
-        { "name": "threshold", "value": 0.31 },
-        { "name": "refinement_method", "value": "VITMatte" },
-        { "name": "refinement_steps", "value": 6 },
-        { "name": "refinement_dilate", "value": 2 },
-        { "name": "refinement_threshold_low", "value": 0.15 },
-        { "name": "refinement_threshold_high", "value": 0.99 },
-        { "name": "refinement_invert", "value": true },
-        { "name": "prompt_default", "value": "subject" },
-        { "name": "device", "value": "cuda" },
-        { "name": "batch_size", "value": 2 }
-      ],
-      "outputs": [
-        { "name": "image", "type": "IMAGE", "links": null, "shape": 3, "label": "image" },
-        { "name": "mask", "type": "MASK", "links": [72], "shape": 3, "label": "mask", "slot_index": 1 }
-      ],
-      "properties": { "Node name for S&R": "LayerMask: SegmentAnythingUltra V3" }
-    },
-    {
-      "id": 126,
-      "type": "MaskFix+",
-      "pos": { "0": -222, "1": 57 },
-      "size": { "0": 315, "1": 154 },
-      "flags": {},
-      "order": 6,
-      "mode": 0,
-      "inputs": [
-        { "name": "mask", "type": "MASK", "link": 72, "label": "mask" },
-        { "name": "erode", "value": 2 },
-        { "name": "dilate", "value": 4 },
-        { "name": "blur", "value": 12 },
-        { "name": "threshold", "value": 9 },
-        { "name": "invert", "value": 101 }
-      ],
-      "outputs": [
-        { "name": "MASK", "type": "MASK", "links": [73], "shape": 3, "label": "MASK", "slot_index": 0 }
-      ],
-      "properties": { "Node name for S&R": "MaskFix+" }
-    },
-    {
-      "id": 125,
-      "type": "TensorArt_LoadImage",
-      "pos": { "0": -540, "1": 322 },
-      "size": { "0": 315, "1": 314 },
-      "flags": {},
-      "order": 2,
-      "mode": 0,
-      "inputs": [
-        { "name": "image", "value": "textureResourceId" },
-        { "name": "upload", "value": "image" }
-      ],
-      "outputs": [
-        { "name": "IMAGE", "type": "IMAGE", "links": [74], "shape": 3, "label": "IMAGE", "slot_index": 0 },
-        { "name": "MASK", "type": "MASK", "links": null, "shape": 3, "label": "MASK" }
-      ],
-      "properties": { "Node name for S&R": "TensorArt_LoadImage" }
-    },
-    {
-      "id": 127,
-      "type": "Image Seamless Texture",
-      "pos": { "0": -94, "1": 698 },
-      "size": { "0": 315, "1": 106 },
-      "flags": {},
-      "order": 4,
-      "mode": 0,
-      "inputs": [
-        { "name": "images", "type": "IMAGE", "link": 74, "label": "images" },
-        { "name": "blending", "value": 0.4 },
-        { "name": "tiled", "value": "true" },
-        { "name": "tiles", "value": 4 }
-      ],
-      "outputs": [
-        { "name": "images", "type": "IMAGE", "links": [75], "shape": 3, "label": "images", "slot_index": 0 }
-      ],
-      "properties": { "Node name for S&R": "Image Seamless Texture" }
-    },
-    {
-      "id": 108,
-      "type": "BlendInpaint",
-      "pos": { "0": 340, "1": 472 },
-      "size": { "0": 315, "1": 142 },
-      "flags": {},
-      "order": 9,
-      "mode": 0,
-      "inputs": [
-        { "name": "inpaint", "type": "IMAGE", "link": 75, "label": "inpaint" },
-        { "name": "original", "type": "IMAGE", "link": 68, "label": "original" },
-        { "name": "mask", "type": "MASK", "link": 66, "label": "mask" },
-        { "name": "origin", "type": "VECTOR", "link": null, "label": "origin" },
-        { "name": "padding", "value": 10 },
-        { "name": "feather", "value": 10 }
-      ],
-      "outputs": [
-        { "name": "image", "type": "IMAGE", "links": [26], "shape": 3, "label": "image", "slot_index": 0 },
-        { "name": "MASK", "type": "MASK", "links": null, "shape": 3, "label": "MASK" }
-      ],
-      "properties": { "Node name for S&R": "BlendInpaint" }
-    },
-    {
-      "id": 117,
-      "type": "CR Text",
-      "pos": { "0": -942, "1": 708 },
-      "size": { "0": 400, "1": 200 },
-      "flags": {},
-      "order": 3,
-      "mode": 0,
-      "inputs": [
-        { "name": "text", "value": "countertop\n\n" }
-      ],
-      "outputs": [
-        { "name": "text", "type": "*", "links": [59], "shape": 3, "label": "text", "slot_index": 0 },
-        { "name": "show_help", "type": "STRING", "links": null, "shape": 3, "label": "show_help" }
-      ],
-      "properties": { "Node name for S&R": "CR Text" }
-    }
-  ],
-  "links": [
-    [0, null, null, null, null, null],
-    [1, null, null, null, null, null],
-    [2, null, null, null, null, null],
-    [3, null, null, null, null, null],
-    [4, null, null, null, null, null],
-    [5, null, null, null, null, null],
-    [6, null, null, null, null, null],
-    [7, null, null, null, null, null],
-    [8, null, null, null, null, null],
-    [9, null, null, null, null, null],
-    [10, null, null, null, null, null],
-    [26, 108, 0, 7, 0, "IMAGE"],
-    [58, 122, 0, 121, 1, "LS_SAM_MODELS"],
-    [59, 117, 0, 121, 2, "STRING"],
-    [65, 111, 1, 123, 0, "MASK"],
-    [66, 123, 0, 108, 2, "MASK"],
-    [68, 124, 0, 108, 1, "IMAGE"],
-    [69, 124, 0, 121, 0, "IMAGE"],
-    [70, 124, 0, 111, 0, "IMAGE"],
-    [72, 121, 1, 126, 0, "MASK"],
-    [73, 126, 0, 111, 1, "MASK"],
-    [74, 125, 0, 127, 0, "IMAGE"],
-    [75, 127, 0, 108, 0, "IMAGE"]
-  ],
-  "groups": [],
-  "config": {},
-  "extra": {
-    "ds": {
-      "scale": 0.620921323059155,
-      "offset": [819.124844579522, 126.60086312448823]
+    "properties": {
+      "Node name for S&R": "LayerMask: LoadSegmentAnythingModels"
     }
   },
-  "version": 0.4
+  "111": {
+    "classType": "LayerMask: MaskEdgeUltraDetail",
+    "inputs": {
+      "image": [124, 0],
+      "mask": [126, 0],
+      "method": "PyMatting",
+      "trimap_dilation": 0,
+      "trimap_erosion": 0,
+      "trimap_blur": 0.75,
+      "trimap_steps": 5,
+      "trimap_threshold_low": 0.01,
+      "trimap_threshold_high": 0.99
+    },
+    "properties": {
+      "Node name for S&R": "LayerMask: MaskEdgeUltraDetail"
+    }
+  },
+  "123": {
+    "classType": "LayerMask: MaskEdgeShrink",
+    "inputs": {
+      "mask": [111, 1],
+      "invert": false,
+      "erode": 1,
+      "dilate": 4,
+      "blur": 1,
+      "threshold": 64
+    },
+    "properties": {
+      "Node name for S&R": "LayerMask: MaskEdgeShrink"
+    }
+  },
+  "7": {
+    "classType": "PreviewImage",
+    "inputs": {
+      "images": [108, 0]
+    },
+    "properties": {
+      "Node name for S&R": "PreviewImage"
+    }
+  },
+  "124": {
+    "classType": "TensorArt_LoadImage",
+    "inputs": {
+      "image": "imageResourceId",
+      "upload": "image"
+    },
+    "properties": {
+      "Node name for S&R": "TensorArt_LoadImage"
+    }
+  },
+  "121": {
+    "classType": "LayerMask: SegmentAnythingUltra V3",
+    "inputs": {
+      "image": [124, 0],
+      "sam_models": [122, 0],
+      "prompt": "position.toLowerCase()",
+      "threshold": 0.31,
+      "refinement_method": "VITMatte",
+      "refinement_steps": 6,
+      "refinement_dilate": 2,
+      "refinement_threshold_low": 0.15,
+      "refinement_threshold_high": 0.99,
+      "refinement_invert": true,
+      "prompt_default": "subject",
+      "device": "cuda",
+      "batch_size": 2
+    },
+    "properties": {
+      "Node name for S&R": "LayerMask: SegmentAnythingUltra V3"
+    }
+  },
+  "126": {
+    "classType": "MaskFix+",
+    "inputs": {
+      "mask": [121, 1],
+      "erode": 2,
+      "dilate": 4,
+      "blur": 12,
+      "threshold": 9,
+      "invert": 101
+    },
+    "properties": {
+      "Node name for S&R": "MaskFix+"
+    }
+  },
+  "125": {
+    "classType": "TensorArt_LoadImage",
+    "inputs": {
+      "image": "textureResourceId",
+      "upload": "image"
+    },
+    "properties": {
+      "Node name for S&R": "TensorArt_LoadImage"
+    }
+  },
+  "127": {
+    "classType": "Image Seamless Texture",
+    "inputs": {
+      "images": [125, 0],
+      "blending": 0.4,
+      "tiled": "true",
+      "tiles": 4
+    },
+    "properties": {
+      "Node name for S&R": "Image Seamless Texture"
+    }
+  },
+  "108": {
+    "classType": "BlendInpaint",
+    "inputs": {
+      "inpaint": [127, 0],
+      "original": [124, 0],
+      "mask": [123, 0],
+      "origin": null,
+      "padding": 10,
+      "feather": 10
+    },
+    "properties": {
+      "Node name for S&R": "BlendInpaint"
+    }
+  },
+  "117": {
+    "classType": "CR Text",
+    "inputs": {
+      "text": "position.toLowerCase() + '\n\n'"
+    },
+    "properties": {
+      "Node name for S&R": "CR Text"
+    }
+  }
 };
 
 const App: React.FC = () => {
@@ -581,35 +462,131 @@ const App: React.FC = () => {
       if (!textureFilePath) throw new Error(`Không tìm thấy ảnh sản phẩm cho ${selectedProduct}`);
       const textureResourceId = await uploadImageToTensorArt(textureFilePath);
 
-      // Cập nhật workflow với resource IDs thực tế
-      const updatedWorkflow = JSON.parse(JSON.stringify(WORKFLOW_JSON));
-      updatedWorkflow.nodes.forEach((node: any) => {
-        if (node.id === 124) { // Node TensorArt_LoadImage cho ảnh gốc
-          node.inputs.forEach((input: any) => {
-            if (input.name === "image") {
-              input.value = imageResourceId;
-            }
-          });
-        }
-        if (node.id === 125) { // Node TensorArt_LoadImage cho texture
-          node.inputs.forEach((input: any) => {
-            if (input.name === "image") {
-              input.value = textureResourceId;
-            }
-          });
-        }
-        if (node.id === 117) { // Node CR Text cho prompt
-          node.inputs.forEach((input: any) => {
-            if (input.name === "text") {
-              input.value = position.toLowerCase() + "\n\n";
-            }
-          });
-        }
-      });
+      const [width, height] = img2imgSize.split('x').map(Number);
+      const workflowParams = {
+        '122': {
+          classType: 'LayerMask: LoadSegmentAnythingModels',
+          inputs: {
+            "sam_model": "sam_hq_vit_l (1.25GB)",
+            "grounding_dino_model": "GroundingDINO_SwinT_OGC (694MB)"
+          },
+          properties: { 'Node name for S&R': 'LayerMask: LoadSegmentAnythingModels' },
+        },
+        '111': {
+          classType: 'LayerMask: MaskEdgeUltraDetail',
+          inputs: {
+            "image": [124, 0],
+            "mask": [126, 0],
+            "method": "PyMatting",
+            "trimap_dilation": 0,
+            "trimap_erosion": 0,
+            "trimap_blur": 0.75,
+            "trimap_steps": 5,
+            "trimap_threshold_low": 0.01,
+            "trimap_threshold_high": 0.99
+          },
+          properties: { 'Node name for S&R': 'LayerMask: MaskEdgeUltraDetail' },
+        },
+        '123': {
+          classType: 'LayerMask: MaskEdgeShrink',
+          inputs: {
+            "mask": [111, 1],
+            "invert": false,
+            "erode": 1,
+            "dilate": 4,
+            "blur": 1,
+            "threshold": 64
+          },
+          properties: { 'Node name for S&R': 'LayerMask: MaskEdgeShrink' },
+        },
+        '7': {
+          classType: 'PreviewImage',
+          inputs: {
+            "images": [108, 0]
+          },
+          properties: { 'Node name for S&R': 'PreviewImage' },
+        },
+        '124': {
+          classType: 'TensorArt_LoadImage',
+          inputs: {
+            "image": imageResourceId,
+            "upload": "image"
+          },
+          properties: { 'Node name for S&R': 'TensorArt_LoadImage' },
+        },
+        '121': {
+          classType: 'LayerMask: SegmentAnythingUltra V3',
+          inputs: {
+            "image": [124, 0],
+            "sam_models": [122, 0],
+            "prompt": position.toLowerCase(),
+            "threshold": 0.31,
+            "refinement_method": "VITMatte",
+            "refinement_steps": 6,
+            "refinement_dilate": 2,
+            "refinement_threshold_low": 0.15,
+            "refinement_threshold_high": 0.99,
+            "refinement_invert": true,
+            "prompt_default": "subject",
+            "device": "cuda",
+            "batch_size": 2
+          },
+          properties: { 'Node name for S&R': 'LayerMask: SegmentAnythingUltra V3' },
+        },
+        '126': {
+          classType: 'MaskFix+',
+          inputs: {
+            "mask": [121, 1],
+            "erode": 2,
+            "dilate": 4,
+            "blur": 12,
+            "threshold": 9,
+            "invert": 101
+          },
+          properties: { 'Node name for S&R': 'MaskFix+' },
+        },
+        '125': {
+          classType: 'TensorArt_LoadImage',
+          inputs: {
+            "image": textureResourceId,
+            "upload": "image"
+          },
+          properties: { 'Node name for S&R': 'TensorArt_LoadImage' },
+        },
+        '127': {
+          classType: 'Image Seamless Texture',
+          inputs: {
+            "images": [125, 0],
+            "blending": 0.4,
+            "tiled": "true",
+            "tiles": 4
+          },
+          properties: { 'Node name for S&R': 'Image Seamless Texture' },
+        },
+        '108': {
+          classType: 'BlendInpaint',
+          inputs: {
+            "inpaint": [127, 0],
+            "original": [124, 0],
+            "mask": [123, 0],
+            "origin": null,
+            "padding": 10,
+            "feather": 10
+          },
+          properties: { 'Node name for S&R': 'BlendInpaint' },
+        },
+        '117': {
+          classType: 'CR Text',
+          inputs: {
+            "text": position.toLowerCase() + '\n\n'
+          },
+          properties: { 'Node name for S&R': 'CR Text' },
+        },
+      };
 
       const response = await axios.post(
         `${TENSOR_ART_API_URL}/jobs/workflow`,
-        updatedWorkflow,
+        { requestId: `workflow_${Date.now()}`, params: workflowParams, runningNotifyUrl: '' },
         { headers }
       );
       const jobId = response.data.job.id;
@@ -754,12 +731,12 @@ const App: React.FC = () => {
                     >
                       <option value="floor">Sàn nhà</option>
                       <option value="wall">Tường</option>
-                      <option value="countertop">Countertop</option>
+                      <option value="countertop">countertop</option>
                       <option value="stair">Cầu thang</option>
                       <option value="tabletop">Mặt bàn</option>
                       <option value="backplash">Tường bếp</option>
                       <option value="counter">Quầy bar</option>
-                      <option value="coffeetable">Bàn cafe</option>
+                      <option value="coffee table">Bàn cafe</option>
                       <option value="custom">Tùy chỉnh</option>
                     </select>
                     {isCustomPosition && (
