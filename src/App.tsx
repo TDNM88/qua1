@@ -754,7 +754,7 @@ const App: React.FC = () => {
                     >
                       <option value="floor">Sàn nhà</option>
                       <option value="wall">Tường</option>
-                      <option value="countertop">Mặt bàn</option>
+                      <option value="countertop">Countertop</option>
                       <option value="stair">Cầu thang</option>
                       <option value="tabletop">Mặt bàn</option>
                       <option value="backplash">Tường bếp</option>
