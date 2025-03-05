@@ -161,7 +161,8 @@ const WORKFLOW_PARAMS = {
     type: "PreviewImage",
     flags: {},
     order: 10,
-    mode: "RUN"
+    mode: "RUN",
+    outputs: []
   },
   "124": {
     classType: "TensorArt_LoadImage",
@@ -246,15 +247,34 @@ const WORKFLOW_PARAMS = {
       "inpaint": [127, 0],
       "original": [124, 0],
       "mask": [123, 0],
-      "origin": null,
+      "origin": [0, 0],
       "padding": 10,
-      "feather": 10
+      "feather": 10,
+      "resize_mode": 0,
+      "strength": 1.0
     },
     properties: { "Node name for S&R": "BlendInpaint" },
     type: "BlendInpaint",
     flags: {},
     order: 9,
-    mode: 0
+    mode: 0,
+    outputs: [
+      {
+        "name": "image",
+        "type": "IMAGE",
+        "links": [26],
+        "shape": 3,
+        "label": "image",
+        "slot_index": 0
+      },
+      {
+        "name": "MASK",
+        "type": "MASK",
+        "links": null,
+        "shape": 3,
+        "label": "MASK"
+      }
+    ]
   },
   "117": {
     classType: "CR Text",
@@ -492,7 +512,7 @@ const App: React.FC = () => {
       workflowParams['125'].inputs.image = textureResourceId;
       workflowParams['117'].inputs.text = position.toLowerCase() + '\n\n';
 
-      // Cập nhật kích thước nếu cần (tùy thuộc vào yêu cầu của TensorArt)
+      // Cập nhật kích thước nếu cần
       workflowParams['124'].inputs._height = height;
       workflowParams['124'].inputs._width = width;
 
@@ -509,6 +529,7 @@ const App: React.FC = () => {
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
         console.error('Axios Error:', err.response?.data || err.message);
+        console.error('Response Data:', err.response?.data.details);
       }
       setError(`Có lỗi xảy ra khi tạo ảnh: ${(err as Error).message}`);
       console.error(err);
@@ -524,7 +545,7 @@ const App: React.FC = () => {
       return;
     }
 
-    console.log('Starting processText2Img, setting loading to false');
+    console.log('Starting processText2Img, setting loading to true');
     setGeneratedImage(null);
     setProgress(0);
     setCurrentQuote(0);
