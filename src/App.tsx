@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Footer from './components/Footer';
 import UsageGuide from './components/UsageGuide';
-import { createHash } from 'crypto'; // Thêm crypto để tạo MD5
 
 // Define types
 type TabType = 'img2img' | 'text2img';
@@ -103,11 +102,6 @@ const checkImageQuality = (file: File): Promise<{ isValid: boolean; message: str
 
     img.src = url;
   });
-};
-
-// Hàm tạo MD5
-const createMD5 = () => {
-  return createHash('md5').update(`${Date.now()}`).digest('hex');
 };
 
 // Hàm tạo seed ngẫu nhiên
@@ -312,7 +306,7 @@ export default function CaslaQuartzImageGenerator() {
 
       // Chuẩn bị dữ liệu cho workflow template với cấu trúc từ template
       const workflowData = {
-        request_id: createMD5(),
+        request_id: Date.now().toString(), // Sử dụng timestamp thay vì MD5
         templateId: WORKFLOW_TEMPLATE_ID,
         fields: {
           fieldAttrs: [
@@ -383,7 +377,7 @@ export default function CaslaQuartzImageGenerator() {
       const fullPrompt = `${prompt}, featuring ${text2imgSelectedProducts.join(', ')} quartz marble`;
 
       const txt2imgData = {
-        request_id: createMD5(),
+        request_id: Date.now().toString(), // Sử dụng timestamp thay vì MD5
         stages: [
           { type: 'INPUT_INITIALIZE', inputInitialize: { seed: -1, count: 1 } },
           {
