@@ -312,7 +312,7 @@ export default function CaslaQuartzImageGenerator() {
         "3": {
           classType: "KSampler",
           inputs: {
-            model: ["39", 0],
+            model: ["47", 0],
             positive: ["26", 0],
             negative: ["38", 1],
             latent_image: ["38", 2],
@@ -334,7 +334,7 @@ export default function CaslaQuartzImageGenerator() {
         },
         "8": {
           classType: "VAEDecode",
-          inputs: { samples: ["3", 0], vae: ["32", 0] },
+          inputs: { samples: ["3", 0], vae: ["47", 2] }, // Kết nối VAE từ CheckpointLoader
           properties: { "Node name for S&R": "VAEDecode" },
         },
         "9": {
@@ -353,15 +353,14 @@ export default function CaslaQuartzImageGenerator() {
           properties: { "Node name for S&R": "VAELoader" },
         },
         "34": {
-          classType: "TripleCLIPLoader",
+          classType: "DualCLIPLoader",
           inputs: { 
-            clip_l: "clip_l_sdxl_base.safetensors", 
-            clip_g: "t5xxl.safetensors", // Cập nhật để khớp với workflow
-            clip_t5: "t5xxl.safetensors", // Giữ nguyên để tích hợp T5
+            clip_name1: "clip_l_sdxl_base.safetensors", 
+            clip_name2: "t5xxl.safetensors", 
             type: "flux", 
             device: "default" 
           },
-          properties: { "Node name for S&R": "TripleCLIPLoader" },
+          properties: { "Node name for S&R": "DualCLIPLoader" },
         },
         "38": {
           classType: "InpaintModelConditioning",
@@ -386,9 +385,9 @@ export default function CaslaQuartzImageGenerator() {
           properties: { "Node name for S&R": "TensorArt_LoadImage" },
         },
         "47": {
-          classType: "TensorArt_CheckpointLoader",
-          inputs: { ckpt_id: "799485016842306392", ckpt_name: "799485016842306392" },
-          properties: { "Node name for S&R": "TensorArt_CheckpointLoader" },
+          classType: "CheckpointLoader",
+          inputs: { ckpt_name: "799485016842306392" }, // Sử dụng ID làm ckpt_name
+          properties: { "Node name for S&R": "CheckpointLoader" },
         },
         "49": {
           classType: "TensorArt_Seed",
