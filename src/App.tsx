@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Footer from './components/Footer';
 import UsageGuide from './components/UsageGuide';
+import { createHash } from 'crypto'; // Thêm crypto để tạo MD5
 
 // Define types
 type TabType = 'img2img' | 'text2img';
 type Product = string;
 
 const TENSOR_ART_API_URL = "https://ap-east-1.tensorart.cloud/v1";
+const WORKFLOW_TEMPLATE_ID = "837405094118019506"; // Workflow template ID
 
 // Danh sách sản phẩm
 const PRODUCTS = [
@@ -103,6 +105,16 @@ const checkImageQuality = (file: File): Promise<{ isValid: boolean; message: str
   });
 };
 
+// Hàm tạo MD5
+const createMD5 = () => {
+  return createHash('md5').update(`${Date.now()}`).digest('hex');
+};
+
+// Hàm tạo seed ngẫu nhiên
+const generateRandomSeed = () => {
+  return Math.floor(Math.random() * 1000000000000000); // Tạo seed ngẫu nhiên trong phạm vi lớn
+};
+
 export default function CaslaQuartzImageGenerator() {
   const [activeTab, setActiveTab] = useState<TabType>('img2img');
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
@@ -136,24 +148,13 @@ export default function CaslaQuartzImageGenerator() {
 
   const uploadImageToTensorArt = async (imageData: string): Promise<string> => {
     const url = `${TENSOR_ART_API_URL}/resource/image`;
-    const payload = JSON.stringify({ expireSec: 7200 });
-
-    const apiKey = process.env.REACT_APP_TENSOR_ART_API_KEY;
-    if (!apiKey) {
-      throw new Error('Missing API Key in .env');
-    }
-
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
-    };
+    const payload = { expireSec: 7200 };
 
     try {
       const response = await fetch(url, {
         method: 'POST',
         headers,
-        body: payload,
+        body: JSON.stringify(payload),
       });
 
       const responseText = await response.text();
@@ -301,176 +302,53 @@ export default function CaslaQuartzImageGenerator() {
     setError(null);
 
     try {
+      // Upload ảnh input từ người dùng
       const imageResourceId = await uploadImageToTensorArt(uploadedImage);
       const selectedProduct = img2imgSelectedProducts[0];
       const textureFilePath = PRODUCT_IMAGE_MAP[selectedProduct];
       if (!textureFilePath) throw new Error(`Không tìm thấy ảnh sản phẩm cho ${selectedProduct}`);
+      // Upload ảnh texture
       const textureResourceId = await uploadImageToTensorArt(textureFilePath);
 
-      const [width, height] = img2imgSize.split('x').map(Number);
-      const workflowParams = {
-        "3": {
-          classType: "KSampler",
-          inputs: {
-            model: ["47", 0],
-            positive: ["26", 0],
-            negative: ["38", 1],
-            latent_image: ["62", 0], // Kết nối với VAEEncode
-            seed: ["49", 0],
-            seed_value: 1045449023614035,
-            seed_mode: "randomize",
-            steps: 20,
-            cfg: 1,
-            sampler_name: "euler",
-            scheduler: "normal",
-            denoise: 1
-          },
-          properties: { "Node name for S&R": "KSampler" },
-        },
-        "7": {
-          classType: "CLIPTextEncode",
-          inputs: { clip: ["34", 0], text: "" },
-          properties: { "Node name for S&R": "CLIPTextEncode" },
-        },
-        "8": {
-          classType: "VAEDecode",
-          inputs: { samples: ["3", 0], vae: ["32", 0] },
-          properties: { "Node name for S&R": "VAEDecode" },
-        },
-        "9": {
-          classType: "SaveImage",
-          inputs: { images: ["8", 0], filename_prefix: "TensorArt" },
-          properties: { "Node name for S&R": "SaveImage" },
-        },
-        "26": {
-          classType: "FluxGuidance",
-          inputs: { conditioning: ["51", 0], guidance: 30 },
-          properties: { "Node name for S&R": "FluxGuidance" },
-        },
-        "32": {
-          classType: "VAELoader",
-          inputs: { vae_name: "ae.sft" },
-          properties: { "Node name for S&R": "VAELoader" },
-        },
-        "34": {
-          classType: "DualCLIPLoader",
-          inputs: { 
-            clip_name1: "clip_l_sdxl_base.safetensors", 
-            clip_name2: "t5xxl.safetensors", 
-            type: "flux", 
-            device: "default" 
-          },
-          properties: { "Node name for S&R": "DualCLIPLoader" },
-        },
-        "38": {
-          classType: "InpaintModelConditioning",
-          inputs: { 
-            positive: ["55", 0], 
-            negative: ["7", 0], 
-            vae: ["32", 0], 
-            pixels: ["53", 0], 
-            mask: ["60", 1], 
-            masked_latent: true 
-          },
-          properties: { "Node name for S&R": "InpaintModelConditioning" },
-        },
-        "39": {
-          classType: "DifferentialDiffusion",
-          inputs: { model: ["47", 0] },
-          properties: { "Node name for S&R": "DifferentialDiffusion" },
-        },
-        "46": {
-          classType: "TensorArt_LoadImage",
-          inputs: { _height: height, _width: width, image: textureResourceId, upload: "image" },
-          properties: { "Node name for S&R": "TensorArt_LoadImage" },
-        },
-        "47": {
-          classType: "CheckpointLoaderSimple",
-          inputs: { ckpt_name: "799485016842306392" },
-          properties: { "Node name for S&R": "CheckpointLoaderSimple" },
-        },
-        "49": {
-          classType: "TensorArt_Seed",
-          inputs: { seed: 1048929545172783, mode: "randomize" },
-          properties: { "Node name for S&R": "TensorArt_Seed" },
-        },
-        "50": {
-          classType: "StyleModelLoader",
-          inputs: { style_model_name: "flux1-redux-dev.safetensors" },
-          properties: { "Node name for S&R": "StyleModelLoader" },
-        },
-        "51": {
-          classType: "StyleModelApply",
-          inputs: { 
-            conditioning: ["38", 0], 
-            style_model: ["50", 0], 
-            clip_vision_output: ["52", 0], 
-            strength: 1.084, 
-            mode: "multiply" 
-          },
-          properties: { "Node name for S&R": "StyleModelApply" },
-        },
-        "52": {
-          classType: "CLIPVisionEncode",
-          inputs: { clip_vision: ["54", 0], image: ["46", 0], encode_type: "none" },
-          properties: { "Node name for S&R": "CLIPVisionEncode" },
-        },
-        "53": {
-          classType: "LoadImage",
-          inputs: { _height: height, _width: width, image: imageResourceId, upload: "image" },
-          properties: { "Node name for S&R": "LoadImage" },
-        },
-        "54": {
-          classType: "CLIPVisionLoader",
-          inputs: { clip_name: "sigclip_vision_patch14_384.safetensors" },
-          properties: { "Node name for S&R": "CLIPVisionLoader" },
-        },
-        "55": {
-          classType: "CLIPTextEncode",
-          inputs: { clip: ["34", 0], text: "" },
-          properties: { "Node name for S&R": "CLIPTextEncode" },
-        },
-        "57": {
-          classType: "Text",
-          inputs: { text: position.toLowerCase() },
-          properties: { "Node name for S&R": "Text" },
-        },
-        "60": {
-          classType: "LayerMask: SegmentAnythingUltra V3",
-          inputs: { 
-            image: ["53", 0], 
-            sam_models: ["61", 0], 
-            prompt: ["57", 0], 
-            threshold: 0.3, 
-            black_point: 0.05, 
-            white_point: 0.99, 
-            detail_erode: 6, 
-            detail_dilate: 6, 
-            detail_method: "VITMatte", 
-            max_megapixels: 2, 
-            process_detail: true, 
-            device: "cuda" 
-          },
-          properties: { "Node name for S&R": "LayerMask: SegmentAnythingUltra V3" },
-        },
-        "61": {
-          classType: "LayerMask: LoadSegmentAnythingModels",
-          inputs: { sam_model: "sam_vit_h (2.56GB)", grounding_dino_model: "GroundingDINO_SwinT_OGC (694MB)" },
-          properties: { "Node name for S&R": "LayerMask: LoadSegmentAnythingModels" },
-        },
-        "62": {
-          classType: "VAEEncode",
-          inputs: { 
-            pixels: ["53", 0], // Ảnh từ LoadImage
-            vae: ["32", 0] // VAE từ VAELoader
-          },
-          properties: { "Node name for S&R": "VAEEncode" }
+      // Chuẩn bị dữ liệu cho workflow template với cấu trúc từ template
+      const workflowData = {
+        request_id: createMD5(),
+        templateId: WORKFLOW_TEMPLATE_ID,
+        fields: {
+          fieldAttrs: [
+            {
+              nodeId: "49", // Seed
+              fieldName: "seed",
+              fieldValue: generateRandomSeed(), // Tạo seed ngẫu nhiên
+            },
+            {
+              nodeId: "46", // Ảnh input
+              fieldName: "image",
+              fieldValue: imageResourceId, // Resource ID của ảnh input
+            },
+            {
+              nodeId: "47", // Checkpoint
+              fieldName: "ckpt_name",
+              fieldValue: "799485016842306392", // Giá trị mặc định
+            },
+            {
+              nodeId: "67", // Ảnh texture
+              fieldName: "image",
+              fieldValue: textureResourceId, // Resource ID của ảnh texture
+            },
+            {
+              nodeId: "68", // Vị trí
+              fieldName: "Text",
+              fieldValue: position.toLowerCase(), // Vị trí đặt đá
+            },
+          ],
         },
       };
 
+      // Gửi yêu cầu tạo job từ workflow template
       const response = await axios.post(
-        `${TENSOR_ART_API_URL}/jobs/workflow`,
-        { requestId: `workflow_${Date.now()}`, params: workflowParams, runningNotifyUrl: '' },
+        `${TENSOR_ART_API_URL}/jobs/workflow/template`,
+        workflowData,
         { headers }
       );
       const jobId = response.data.job.id;
@@ -505,7 +383,7 @@ export default function CaslaQuartzImageGenerator() {
       const fullPrompt = `${prompt}, featuring ${text2imgSelectedProducts.join(', ')} quartz marble`;
 
       const txt2imgData = {
-        request_id: Date.now().toString(),
+        request_id: createMD5(),
         stages: [
           { type: 'INPUT_INITIALIZE', inputInitialize: { seed: -1, count: 1 } },
           {
