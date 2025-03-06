@@ -315,7 +315,7 @@ export default function CaslaQuartzImageGenerator() {
             model: ["47", 0],
             positive: ["26", 0],
             negative: ["38", 1],
-            latent_image: ["62", 0], // Kết nối với output của VAEEncode
+            latent_image: ["62", 0], // Kết nối với VAEEncode
             seed: ["49", 0],
             seed_value: 1045449023614035,
             seed_mode: "randomize",
@@ -461,10 +461,10 @@ export default function CaslaQuartzImageGenerator() {
         "62": {
           classType: "VAEEncode",
           inputs: { 
-            pixels: ["53", 0"], // Ảnh từ LoadImage
-            vae: ["32", 0"] // VAE từ VAELoader
+            pixels: ["53", 0], // Ảnh từ LoadImage
+            vae: ["32", 0] // VAE từ VAELoader
           },
-          properties: { "Node name for S&R": "VAEEncode" },
+          properties: { "Node name for S&R": "VAEEncode" }
         },
       };
 
