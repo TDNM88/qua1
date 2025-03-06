@@ -315,7 +315,7 @@ export default function CaslaQuartzImageGenerator() {
             model: ["47", 0],
             positive: ["26", 0],
             negative: ["38", 1],
-            latent_image: ["38", 2],
+            latent_image: ["62", 0], // Kết nối với output của VAEEncode
             seed: ["49", 0],
             seed_value: 1045449023614035,
             seed_mode: "randomize",
@@ -386,7 +386,7 @@ export default function CaslaQuartzImageGenerator() {
         },
         "47": {
           classType: "CheckpointLoaderSimple",
-          inputs: { ckpt_name: "799485016842306392" }, // Sử dụng ID làm ckpt_name
+          inputs: { ckpt_name: "799485016842306392" },
           properties: { "Node name for S&R": "CheckpointLoaderSimple" },
         },
         "49": {
@@ -457,6 +457,14 @@ export default function CaslaQuartzImageGenerator() {
           classType: "LayerMask: LoadSegmentAnythingModels",
           inputs: { sam_model: "sam_vit_h (2.56GB)", grounding_dino_model: "GroundingDINO_SwinT_OGC (694MB)" },
           properties: { "Node name for S&R": "LayerMask: LoadSegmentAnythingModels" },
+        },
+        "62": {
+          classType: "VAEEncode",
+          inputs: { 
+            pixels: ["53", 0"], // Ảnh từ LoadImage
+            vae: ["32", 0"] // VAE từ VAELoader
+          },
+          properties: { "Node name for S&R": "VAEEncode" },
         },
       };
 
