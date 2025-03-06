@@ -303,78 +303,143 @@ export default function CaslaQuartzImageGenerator() {
 
     try {
       const imageResourceId = await uploadImageToTensorArt(uploadedImage);
-      const selectedProduct = img2imgSelectedProducts[0]; // Chỉ lấy 1 sản phẩm
+      const selectedProduct = img2imgSelectedProducts[0];
       const textureFilePath = PRODUCT_IMAGE_MAP[selectedProduct];
       if (!textureFilePath) throw new Error(`Không tìm thấy ảnh sản phẩm cho ${selectedProduct}`);
       const textureResourceId = await uploadImageToTensorArt(textureFilePath);
 
       const [width, height] = img2imgSize.split('x').map(Number);
       const workflowParams = {
-        "111": {
-          classType: "LayerMask: MaskEdgeUltraDetail",
-          inputs: { image: ["121", 0], mask: ["123", 0], method: "OpenCV-GuidedFilter", fix_gap: 6, mask_grow: 0, black_point: 0.01, white_point: 0.99, detail_range: 5, fix_threshold: 0.75 },
-          properties: { "Node name for S&R": "LayerMask: MaskEdgeUltraDetail" },
+        "3": {
+          classType: "KSampler",
+          inputs: {
+            model: ["39", 0],
+            positive: ["26", 0],
+            negative: ["38", 1],
+            latent_image: ["38", 2],
+            seed: ["49", 0],
+            seed_value: 798716157355174,
+            seed_mode: "randomize",
+            steps: 20,
+            cfg: 1,
+            sampler_name: "euler",
+            scheduler: "normal",
+            denoise: 1
+          },
+          properties: { "Node name for S&R": "KSampler" },
         },
-        "117": {
-          classType: "CR Text",
+        "7": {
+          classType: "CLIPTextEncode",
+          inputs: { clip: ["34", 0], text: "" },
+          properties: { "Node name for S&R": "CLIPTextEncode" },
+        },
+        "8": {
+          classType: "VAEDecode",
+          inputs: { samples: ["3", 0], vae: ["32", 0] },
+          properties: { "Node name for S&R": "VAEDecode" },
+        },
+        "9": {
+          classType: "SaveImage",
+          inputs: { images: ["8", 0], filename_prefix: "TensorArt" },
+          properties: { "Node name for S&R": "SaveImage" },
+        },
+        "26": {
+          classType: "FluxGuidance",
+          inputs: { conditioning: ["51", 0], guidance: 30 },
+          properties: { "Node name for S&R": "FluxGuidance" },
+        },
+        "32": {
+          classType: "VAELoader",
+          inputs: { vae_name: "ae.sft" },
+          properties: { "Node name for S&R": "VAELoader" },
+        },
+        "34": {
+          classType: "DualCLIPLoader",
+          inputs: { clip_l: "clip_l_sdxl_base.safetensors", clip_g: "t5xxl_fp8_e4m3fn.safetensors", type: "flux", context: "default" },
+          properties: { "Node name for S&R": "DualCLIPLoader" },
+        },
+        "38": {
+          classType: "InpaintModelConditioning",
+          inputs: { positive: ["55", 0], negative: ["7", 0], vae: ["32", 0], pixels: ["53", 0], mask: ["60", 1], masked_latent: true },
+          properties: { "Node name for S&R": "InpaintModelConditioning" },
+        },
+        "39": {
+          classType: "DifferentialDiffusion",
+          inputs: { model: ["47", 0] },
+          properties: { "Node name for S&R": "DifferentialDiffusion" },
+        },
+        "46": {
+          classType: "TensorArt_LoadImage",
+          inputs: { _height: height, _width: width, image: textureResourceId, upload: "image" },
+          properties: { "Node name for S&R": "TensorArt_LoadImage" },
+        },
+        "47": {
+          classType: "TensorArt_CheckpointLoader",
+          inputs: { ckpt_id: "799485016842306392", ckpt_name: "FLUX.1 Fill - fp16" },
+          properties: { "Node name for S&R": "TensorArt_CheckpointLoader" },
+        },
+        "49": {
+          classType: "TensorArt_Seed",
+          inputs: { seed: 53674060446988, mode: "randomize" },
+          properties: { "Node name for S&R": "TensorArt_Seed" },
+        },
+        "50": {
+          classType: "StyleModelLoader",
+          inputs: { style_model_name: "flux1-redux-dev.safetensors" },
+          properties: { "Node name for S&R": "StyleModelLoader" },
+        },
+        "51": {
+          classType: "StyleModelApply",
+          inputs: { conditioning: ["38", 0], style_model: ["50", 0], clip_vision_output: ["52", 0], strength: 1.084, mode: "multiply" },
+          properties: { "Node name for S&R": "StyleModelApply" },
+        },
+        "52": {
+          classType: "CLIPVisionEncode",
+          inputs: { clip_vision: ["54", 0], image: ["46", 0], encode_type: "none" },
+          properties: { "Node name for S&R": "CLIPVisionEncode" },
+        },
+        "53": {
+          classType: "LoadImage",
+          inputs: { _height: height, _width: width, image: imageResourceId, upload: "image" },
+          properties: { "Node name for S&R": "LoadImage" },
+        },
+        "54": {
+          classType: "CLIPVisionLoader",
+          inputs: { clip_name: "sigclip_vision_patch14_384.safetensors" },
+          properties: { "Node name for S&R": "CLIPVisionLoader" },
+        },
+        "55": {
+          classType: "CLIPTextEncode",
+          inputs: { clip: ["34", 0], text: "" },
+          properties: { "Node name for S&R": "CLIPTextEncode" },
+        },
+        "57": {
+          classType: "Text",
           inputs: { text: position.toLowerCase() },
-          properties: { "Node name for S&R": "CR Text" },
+          properties: { "Node name for S&R": "Text" },
         },
-        "121": {
+        "60": {
           classType: "LayerMask: SegmentAnythingUltra V3",
-          inputs: { image: ["124", 0], device: "cuda", prompt: ["117", 0], threshold: 0.31, sam_models: ["122", 0], black_point: 0.06, white_point: 0.99, detail_erode: 6, detail_dilate: 2, detail_method: "VITMatte", max_megapixels: 2, process_detail: true },
+          inputs: { 
+            image: ["53", 0], 
+            sam_models: ["61", 0], 
+            prompt: ["57", 0], 
+            threshold: 0.3, 
+            black_point: 0.05, 
+            white_point: 0.99, 
+            detail_erode: 6, 
+            detail_dilate: 6, 
+            detail_method: "VITMatte", 
+            max_megapixels: 2, 
+            process_detail: true, 
+            device: "cuda" 
+          },
           properties: { "Node name for S&R": "LayerMask: SegmentAnythingUltra V3" },
         },
-        "122": {
+        "61": {
           classType: "LayerMask: LoadSegmentAnythingModels",
-          inputs: { sam_model: "sam_vit_h (2.56GB)", grounding_dino_model: "GroundingDINO_SwinB (938MB)" },
+          inputs: { sam_model: "sam_vit_h (2.56GB)", grounding_dino_model: "GroundingDINO_SwinT_OGC (694MB)" },
           properties: { "Node name for S&R": "LayerMask: LoadSegmentAnythingModels" },
-        },
-        "123": {
-          classType: "LayerMask: MaskEdgeShrink",
-          inputs: { mask: ["126", 0], soft: 4, edge_shrink: 1, invert_mask: false, edge_reserve: 100, shrink_level: 1 },
-          properties: { "Node name for S&R": "LayerMask: MaskEdgeShrink" },
-        },
-        "124": {
-          classType: "TensorArt_LoadImage",
-          inputs: { _height: height, _width: width, image: imageResourceId, upload: "image" },
-          properties: { "Node name for S&R": "TensorArt_LoadImage" },
-        },
-        "125": {
-          classType: "TensorArt_LoadImage",
-          inputs: { _height: 768, _width: 512, image: textureResourceId, upload: "image" },
-          properties: { "Node name for S&R": "TensorArt_LoadImage" },
-        },
-        "126": {
-          classType: "MaskFix+",
-          inputs: { blur: 52, mask: ["121", 1], smooth: 8, fill_holes: 9, erode_dilate: 4, remove_isolated_pixels: 12 },
-          properties: { "Node name for S&R": "MaskFix+" },
-        },
-        "127": {
-          classType: "Image Seamless Texture",
-          inputs: { tiled: "true", tiles: 4, images: ["125", 0], blending: 0.4 },
-          properties: { "Node name for S&R": "Image Seamless Texture" },
-        },
-        "129": {
-          classType: "BlendInpaint",
-          inputs: { mask: ["111", 1], sigma: 10, kernel: 10, inpaint: ["127", 0], original: ["124", 0] },
-          properties: { "Node name for S&R": "BlendInpaint" },
-        },
-        "130": {
-          classType: "SaveImage",
-          inputs: { images: ["132", 0], filename_prefix: "TensorArt" },
-          properties: {},
-        },
-        "131": {
-          classType: "PreviewImage",
-          inputs: { images: ["129", 0] },
-          properties: { "Node name for S&R": "PreviewImage" },
-        },
-        "132": {
-          classType: "ImageBlend",
-          inputs: { image1: ["129", 0], image2: ["124", 0] },
-          properties: { "Node name for S&R": "ImageBlend" },
-          widgets_values: [0.4, "screen"]
         },
       };
 
