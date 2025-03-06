@@ -334,7 +334,7 @@ export default function CaslaQuartzImageGenerator() {
         },
         "8": {
           classType: "VAEDecode",
-          inputs: { samples: ["3", 0], vae: ["47", 2] }, // Kết nối VAE từ CheckpointLoader
+          inputs: { samples: ["3", 0], vae: ["32", 0] }, // Sử dụng VAELoader riêng thay vì CheckpointLoader
           properties: { "Node name for S&R": "VAEDecode" },
         },
         "9": {
