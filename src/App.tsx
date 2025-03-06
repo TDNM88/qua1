@@ -208,7 +208,6 @@ export default function CaslaQuartzImageGenerator() {
         key={product}
         className={`product-button ${selectedProducts.includes(product) ? 'active' : ''}`}
         onClick={() => {
-          // Chỉ cho phép chọn 1 sản phẩm trong img2img
           if (activeTab === 'img2img') {
             setImg2ImgSelectedProducts([product]);
           } else {
@@ -375,7 +374,7 @@ export default function CaslaQuartzImageGenerator() {
         },
         "47": {
           classType: "TensorArt_CheckpointLoader",
-          inputs: { ckpt_id: "799485016842306392", ckpt_name: "FLUX.1 Fill - fp16" },
+          inputs: { ckpt_id: "799485016842306392", ckpt_name: "799485016842306392" }, // Dùng ckpt_id làm ckpt_name
           properties: { "Node name for S&R": "TensorArt_CheckpointLoader" },
         },
         "49": {
@@ -443,6 +442,7 @@ export default function CaslaQuartzImageGenerator() {
         },
       };
 
+      // Gửi yêu cầu tới API
       const response = await axios.post(
         `${TENSOR_ART_API_URL}/jobs/workflow`,
         { requestId: `workflow_${Date.now()}`, params: workflowParams, runningNotifyUrl: '' },
@@ -452,7 +452,11 @@ export default function CaslaQuartzImageGenerator() {
       const imageUrl = await pollJobStatus(jobId);
       setGeneratedImage(imageUrl);
     } catch (err: unknown) {
-      setError(`Có lỗi xảy ra khi tạo ảnh: ${(err as Error).message}`);
+      if (axios.isAxiosError(err) && err.response) {
+        setError(`Lỗi từ server: ${err.response.data.message || err.message}`);
+      } else {
+        setError(`Có lỗi xảy ra khi tạo ảnh: ${(err as Error).message}`);
+      }
       console.error(err);
     } finally {
       setLoading(false);
@@ -503,7 +507,11 @@ export default function CaslaQuartzImageGenerator() {
       const imageUrl = await pollJobStatus(jobId);
       setGeneratedImage(imageUrl);
     } catch (err: unknown) {
-      setError(`Có lỗi xảy ra khi tạo ảnh: ${(err as Error).message}`);
+      if (axios.isAxiosError(err) && err.response) {
+        setError(`Lỗi từ server: ${err.response.data.message || err.message}`);
+      } else {
+        setError(`Có lỗi xảy ra khi tạo ảnh: ${(err as Error).message}`);
+      }
       console.error(err);
     } finally {
       setLoading(false);
