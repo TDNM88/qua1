@@ -208,11 +208,16 @@ export default function CaslaQuartzImageGenerator() {
         key={product}
         className={`product-button ${selectedProducts.includes(product) ? 'active' : ''}`}
         onClick={() => {
-          setSelectedProducts(
-            selectedProducts.includes(product)
-              ? selectedProducts.filter((p) => p !== product)
-              : [...selectedProducts, product]
-          );
+          // Chỉ cho phép chọn 1 sản phẩm trong img2img
+          if (activeTab === 'img2img') {
+            setImg2ImgSelectedProducts([product]);
+          } else {
+            setText2ImgSelectedProducts(
+              selectedProducts.includes(product)
+                ? selectedProducts.filter((p) => p !== product)
+                : [...selectedProducts, product]
+            );
+          }
         }}
       >
         {product}
@@ -286,7 +291,7 @@ export default function CaslaQuartzImageGenerator() {
 
   const processImg2Img = async () => {
     if (!uploadedImage || img2imgSelectedProducts.length === 0 || !position) {
-      setError('Vui lòng tải ảnh, chọn ít nhất một sản phẩm và chọn/nhập vị trí đặt đá.');
+      setError('Vui lòng tải ảnh, chọn một sản phẩm và chọn/nhập vị trí đặt đá.');
       return;
     }
 
@@ -298,7 +303,7 @@ export default function CaslaQuartzImageGenerator() {
 
     try {
       const imageResourceId = await uploadImageToTensorArt(uploadedImage);
-      const selectedProduct = img2imgSelectedProducts[0];
+      const selectedProduct = img2imgSelectedProducts[0]; // Chỉ lấy 1 sản phẩm
       const textureFilePath = PRODUCT_IMAGE_MAP[selectedProduct];
       if (!textureFilePath) throw new Error(`Không tìm thấy ảnh sản phẩm cho ${selectedProduct}`);
       const textureResourceId = await uploadImageToTensorArt(textureFilePath);
@@ -307,47 +312,69 @@ export default function CaslaQuartzImageGenerator() {
       const workflowParams = {
         "111": {
           classType: "LayerMask: MaskEdgeUltraDetail",
-          inputs: { mask: ["126", 0], image: ["124", 0], method: "PyMatting", fix_gap: 0, mask_grow: 0, black_point: 0.01, white_point: 0.99, detail_range: 5, fix_threshold: 0.75 },
+          inputs: { image: ["121", 0], mask: ["123", 0], method: "OpenCV-GuidedFilter", fix_gap: 6, mask_grow: 0, black_point: 0.01, white_point: 0.99, detail_range: 5, fix_threshold: 0.75 },
+          properties: { "Node name for S&R": "LayerMask: MaskEdgeUltraDetail" },
         },
         "117": {
           classType: "CR Text",
-          inputs: { text: `${position.toLowerCase()}\n\n` },
+          inputs: { text: position.toLowerCase() },
+          properties: { "Node name for S&R": "CR Text" },
         },
         "121": {
           classType: "LayerMask: SegmentAnythingUltra V3",
-          inputs: { image: ["124", 0], device: "cuda", prompt: ["117", 0], threshold: 0.31, sam_models: ["122", 0], black_point: 0.15, white_point: 0.99, detail_erode: 6, detail_dilate: 2, detail_method: "VITMatte", max_megapixels: 2, process_detail: true },
+          inputs: { image: ["124", 0], device: "cuda", prompt: ["117", 0], threshold: 0.31, sam_models: ["122", 0], black_point: 0.06, white_point: 0.99, detail_erode: 6, detail_dilate: 2, detail_method: "VITMatte", max_megapixels: 2, process_detail: true },
+          properties: { "Node name for S&R": "LayerMask: SegmentAnythingUltra V3" },
         },
         "122": {
           classType: "LayerMask: LoadSegmentAnythingModels",
-          inputs: { sam_model: "sam_hq_vit_l (1.25GB)", grounding_dino_model: "GroundingDINO_SwinT_OGC (694MB)" },
+          inputs: { sam_model: "sam_vit_h (2.56GB)", grounding_dino_model: "GroundingDINO_SwinB (938MB)" },
+          properties: { "Node name for S&R": "LayerMask: LoadSegmentAnythingModels" },
         },
         "123": {
           classType: "LayerMask: MaskEdgeShrink",
-          inputs: { mask: ["111", 1], soft: 4, edge_shrink: 1, invert_mask: false, edge_reserve: 64, shrink_level: 1 },
+          inputs: { mask: ["126", 0], soft: 4, edge_shrink: 1, invert_mask: false, edge_reserve: 100, shrink_level: 1 },
+          properties: { "Node name for S&R": "LayerMask: MaskEdgeShrink" },
         },
         "124": {
           classType: "TensorArt_LoadImage",
           inputs: { _height: height, _width: width, image: imageResourceId, upload: "image" },
+          properties: { "Node name for S&R": "TensorArt_LoadImage" },
         },
         "125": {
           classType: "TensorArt_LoadImage",
           inputs: { _height: 768, _width: 512, image: textureResourceId, upload: "image" },
+          properties: { "Node name for S&R": "TensorArt_LoadImage" },
         },
         "126": {
           classType: "MaskFix+",
-          inputs: { blur: 100, mask: ["121", 1], smooth: 9, fill_holes: 4, erode_dilate: 2, remove_isolated_pixels: 12 },
+          inputs: { blur: 52, mask: ["121", 1], smooth: 8, fill_holes: 9, erode_dilate: 4, remove_isolated_pixels: 12 },
+          properties: { "Node name for S&R": "MaskFix+" },
         },
         "127": {
           classType: "Image Seamless Texture",
           inputs: { tiled: "true", tiles: 4, images: ["125", 0], blending: 0.4 },
+          properties: { "Node name for S&R": "Image Seamless Texture" },
         },
         "129": {
           classType: "BlendInpaint",
-          inputs: { mask: ["123", 0], sigma: 10, kernel: 10, inpaint: ["127", 0], original: ["124", 0] },
+          inputs: { mask: ["111", 1], sigma: 10, kernel: 10, inpaint: ["127", 0], original: ["124", 0] },
+          properties: { "Node name for S&R": "BlendInpaint" },
         },
         "130": {
           classType: "SaveImage",
-          inputs: { images: ["129", 0], filename_prefix: "TensorArt" },
+          inputs: { images: ["132", 0], filename_prefix: "TensorArt" },
+          properties: {},
+        },
+        "131": {
+          classType: "PreviewImage",
+          inputs: { images: ["129", 0] },
+          properties: { "Node name for S&R": "PreviewImage" },
+        },
+        "132": {
+          classType: "ImageBlend",
+          inputs: { image1: ["129", 0], image2: ["124", 0] },
+          properties: { "Node name for S&R": "ImageBlend" },
+          widgets_values: [0.4, "screen"]
         },
       };
 
@@ -422,7 +449,7 @@ export default function CaslaQuartzImageGenerator() {
     let interval: NodeJS.Timeout;
     if (loading) {
       interval = setInterval(() => {
-        setProgress((prev) => (prev >= 100 ? 100 : prev + 1));
+        setProgress((prev) => Math.min(prev + 1, 100));
         setCurrentQuote((prev) => (prev + 1) % quotes.length);
       }, 400);
     }
@@ -510,7 +537,7 @@ export default function CaslaQuartzImageGenerator() {
                     </select>
                   </div>
                   <div>
-                    <label>Chọn sản phẩm:</label>
+                    <label>Chọn một sản phẩm:</label>
                     <div className="product-grid">
                       {renderProducts(img2imgSelectedProducts, setImg2ImgSelectedProducts)}
                     </div>
