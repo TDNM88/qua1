@@ -317,7 +317,7 @@ export default function CaslaQuartzImageGenerator() {
             negative: ["38", 1],
             latent_image: ["38", 2],
             seed: ["49", 0],
-            seed_value: 798716157355174,
+            seed_value: 1045449023614035,
             seed_mode: "randomize",
             steps: 20,
             cfg: 1,
@@ -356,10 +356,10 @@ export default function CaslaQuartzImageGenerator() {
           classType: "TripleCLIPLoader",
           inputs: { 
             clip_l: "clip_l_sdxl_base.safetensors", 
-            clip_g: "t5xxl_fp8_e4m3fn.safetensors", 
-            clip_t5: "t5xxl.safetensors", // Cập nhật để khớp với ảnh
+            clip_g: "t5xxl.safetensors", // Cập nhật để khớp với workflow
+            clip_t5: "t5xxl.safetensors", // Giữ nguyên để tích hợp T5
             type: "flux", 
-            device: "default" // Cập nhật từ "context" thành "device" để khớp với ảnh
+            device: "default" 
           },
           properties: { "Node name for S&R": "TripleCLIPLoader" },
         },
@@ -392,7 +392,7 @@ export default function CaslaQuartzImageGenerator() {
         },
         "49": {
           classType: "TensorArt_Seed",
-          inputs: { seed: 53674060446988, mode: "randomize" },
+          inputs: { seed: 1048929545172783, mode: "randomize" },
           properties: { "Node name for S&R": "TensorArt_Seed" },
         },
         "50": {
@@ -437,9 +437,7 @@ export default function CaslaQuartzImageGenerator() {
           properties: { "Node name for S&R": "Text" },
         },
         "60": {
-          classType: "LayerMask: SegmentAnyth
-
-ingUltra V3",
+          classType: "LayerMask: SegmentAnythingUltra V3",
           inputs: { 
             image: ["53", 0], 
             sam_models: ["61", 0], 
