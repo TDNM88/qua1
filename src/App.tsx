@@ -357,9 +357,9 @@ export default function CaslaQuartzImageGenerator() {
           inputs: { 
             clip_l: "clip_l_sdxl_base.safetensors", 
             clip_g: "t5xxl_fp8_e4m3fn.safetensors", 
-            clip_t5: "t5xxl_fp8_e4m3fn.safetensors", // Thêm T5 model
+            clip_t5: "t5xxl.safetensors", // Cập nhật để khớp với ảnh
             type: "flux", 
-            context: "default" 
+            device: "default" // Cập nhật từ "context" thành "device" để khớp với ảnh
           },
           properties: { "Node name for S&R": "TripleCLIPLoader" },
         },
@@ -437,7 +437,9 @@ export default function CaslaQuartzImageGenerator() {
           properties: { "Node name for S&R": "Text" },
         },
         "60": {
-          classType: "LayerMask: SegmentAnythingUltra V3",
+          classType: "LayerMask: SegmentAnyth
+
+ingUltra V3",
           inputs: { 
             image: ["53", 0], 
             sam_models: ["61", 0], 
