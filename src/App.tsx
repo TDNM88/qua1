@@ -353,14 +353,15 @@ export default function CaslaQuartzImageGenerator() {
           properties: { "Node name for S&R": "VAELoader" },
         },
         "34": {
-          classType: "DualCLIPLoader",
+          classType: "TripleCLIPLoader",
           inputs: { 
             clip_l: "clip_l_sdxl_base.safetensors", 
             clip_g: "t5xxl_fp8_e4m3fn.safetensors", 
+            clip_t5: "t5xxl_fp8_e4m3fn.safetensors", // Thêm T5 model
             type: "flux", 
             context: "default" 
           },
-          properties: { "Node name for S&R": "DualCLIPLoader" },
+          properties: { "Node name for S&R": "TripleCLIPLoader" },
         },
         "38": {
           classType: "InpaintModelConditioning",
