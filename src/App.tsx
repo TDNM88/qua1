@@ -354,12 +354,24 @@ export default function CaslaQuartzImageGenerator() {
         },
         "34": {
           classType: "DualCLIPLoader",
-          inputs: { clip_l: "clip_l_sdxl_base.safetensors", clip_g: "t5xxl_fp8_e4m3fn.safetensors", type: "flux", context: "default" },
+          inputs: { 
+            clip_l: "clip_l_sdxl_base.safetensors", 
+            clip_g: "t5xxl_fp8_e4m3fn.safetensors", 
+            type: "flux", 
+            context: "default" 
+          },
           properties: { "Node name for S&R": "DualCLIPLoader" },
         },
         "38": {
           classType: "InpaintModelConditioning",
-          inputs: { positive: ["55", 0], negative: ["7", 0], vae: ["32", 0], pixels: ["53", 0], mask: ["60", 1], masked_latent: true },
+          inputs: { 
+            positive: ["55", 0], 
+            negative: ["7", 0], 
+            vae: ["32", 0], 
+            pixels: ["53", 0], 
+            mask: ["60", 1], 
+            masked_latent: true 
+          },
           properties: { "Node name for S&R": "InpaintModelConditioning" },
         },
         "39": {
@@ -374,7 +386,7 @@ export default function CaslaQuartzImageGenerator() {
         },
         "47": {
           classType: "TensorArt_CheckpointLoader",
-          inputs: { ckpt_id: "799485016842306392", ckpt_name: "799485016842306392" }, // Dùng ckpt_id làm ckpt_name
+          inputs: { ckpt_id: "799485016842306392", ckpt_name: "799485016842306392" },
           properties: { "Node name for S&R": "TensorArt_CheckpointLoader" },
         },
         "49": {
@@ -389,7 +401,13 @@ export default function CaslaQuartzImageGenerator() {
         },
         "51": {
           classType: "StyleModelApply",
-          inputs: { conditioning: ["38", 0], style_model: ["50", 0], clip_vision_output: ["52", 0], strength: 1.084, mode: "multiply" },
+          inputs: { 
+            conditioning: ["38", 0], 
+            style_model: ["50", 0], 
+            clip_vision_output: ["52", 0], 
+            strength: 1.084, 
+            mode: "multiply" 
+          },
           properties: { "Node name for S&R": "StyleModelApply" },
         },
         "52": {
@@ -442,7 +460,6 @@ export default function CaslaQuartzImageGenerator() {
         },
       };
 
-      // Gửi yêu cầu tới API
       const response = await axios.post(
         `${TENSOR_ART_API_URL}/jobs/workflow`,
         { requestId: `workflow_${Date.now()}`, params: workflowParams, runningNotifyUrl: '' },
