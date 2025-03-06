@@ -385,9 +385,9 @@ export default function CaslaQuartzImageGenerator() {
           properties: { "Node name for S&R": "TensorArt_LoadImage" },
         },
         "47": {
-          classType: "CheckpointLoader",
+          classType: "CheckpointLoaderSimple",
           inputs: { ckpt_name: "799485016842306392" }, // Sử dụng ID làm ckpt_name
-          properties: { "Node name for S&R": "CheckpointLoader" },
+          properties: { "Node name for S&R": "CheckpointLoaderSimple" },
         },
         "49": {
           classType: "TensorArt_Seed",
