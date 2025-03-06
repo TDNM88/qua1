@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Footer from './components/Footer';
 import UsageGuide from './components/UsageGuide';
+import { createHash } from 'crypto'; // Giữ crypto để tạo request_id theo hướng dẫn API
 
 // Define types
 type TabType = 'img2img' | 'text2img';
@@ -102,6 +103,11 @@ const checkImageQuality = (file: File): Promise<{ isValid: boolean; message: str
 
     img.src = url;
   });
+};
+
+// Hàm tạo MD5 (giữ nguyên theo hướng dẫn API)
+const createMD5 = () => {
+  return createHash('md5').update(`${Date.now()}`).digest('hex');
 };
 
 // Hàm tạo seed ngẫu nhiên
@@ -296,17 +302,17 @@ export default function CaslaQuartzImageGenerator() {
     setError(null);
 
     try {
-      // Upload ảnh input từ người dùng
+      // Upload ảnh input từ người dùng (cho node 67)
       const imageResourceId = await uploadImageToTensorArt(uploadedImage);
       const selectedProduct = img2imgSelectedProducts[0];
       const textureFilePath = PRODUCT_IMAGE_MAP[selectedProduct];
       if (!textureFilePath) throw new Error(`Không tìm thấy ảnh sản phẩm cho ${selectedProduct}`);
-      // Upload ảnh texture
+      // Upload ảnh texture (cho node 46)
       const textureResourceId = await uploadImageToTensorArt(textureFilePath);
 
       // Chuẩn bị dữ liệu cho workflow template với cấu trúc từ template
       const workflowData = {
-        request_id: Date.now().toString(), // Sử dụng timestamp thay vì MD5
+        request_id: createMD5(), // Tạo request_id bằng MD5 theo hướng dẫn API
         templateId: WORKFLOW_TEMPLATE_ID,
         fields: {
           fieldAttrs: [
@@ -316,9 +322,9 @@ export default function CaslaQuartzImageGenerator() {
               fieldValue: generateRandomSeed(), // Tạo seed ngẫu nhiên
             },
             {
-              nodeId: "46", // Ảnh input
+              nodeId: "46", // Ảnh sản phẩm (texture)
               fieldName: "image",
-              fieldValue: imageResourceId, // Resource ID của ảnh input
+              fieldValue: textureResourceId, // Resource ID của ảnh sản phẩm
             },
             {
               nodeId: "47", // Checkpoint
@@ -326,9 +332,9 @@ export default function CaslaQuartzImageGenerator() {
               fieldValue: "799485016842306392", // Giá trị mặc định
             },
             {
-              nodeId: "67", // Ảnh texture
+              nodeId: "67", // Ảnh người dùng tải lên
               fieldName: "image",
-              fieldValue: textureResourceId, // Resource ID của ảnh texture
+              fieldValue: imageResourceId, // Resource ID của ảnh người dùng
             },
             {
               nodeId: "68", // Vị trí
@@ -377,7 +383,7 @@ export default function CaslaQuartzImageGenerator() {
       const fullPrompt = `${prompt}, featuring ${text2imgSelectedProducts.join(', ')} quartz marble`;
 
       const txt2imgData = {
-        request_id: Date.now().toString(), // Sử dụng timestamp thay vì MD5
+        request_id: createMD5(),
         stages: [
           { type: 'INPUT_INITIALIZE', inputInitialize: { seed: -1, count: 1 } },
           {
