@@ -255,16 +255,12 @@ export default function CaslaQuartzImageGenerator() {
   }, [loading]);
 
   return (
-    <div className="app-container">
-      <div className="overlay">
-        <div className="content">
-          <header className="header">
-            <img src="logo.png" alt="Casla Quartz Logo" />
-            <h1>Đưa Kiệt Tác Vào Công Trình Của Bạn!</h1>
-          </header>
-          <div className="tab-container">
-            <UsageGuide />
-            <div className="tab-buttons">
+                  <button
+                className={`tab-button ${activeTab === 'img2img' ? 'active' : ''}`}
+                onClick={() => switchTab('img2img')}
+              >
+                Tạo Ảnh CaslaQuartz Cùng Công Trình Có Sẵn
+              </button>
               <button
                 className={`tab-button ${activeTab === 'text2img' ? 'active' : ''}`}
                 onClick={() => switchTab('text2img')}
