@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import fabric from 'fabric';
+import fabric from 'fabric'; // Sửa import ở đây
 import Footer from './components/Footer';
 import UsageGuide from './components/UsageGuide';
 
