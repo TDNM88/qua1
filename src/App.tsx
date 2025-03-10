@@ -56,18 +56,15 @@ const checkImageQuality = (file: File): Promise<{ isValid: boolean; message: str
   return new Promise((resolve) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
-
     img.onload = () => {
       const width = img.width;
       const height = img.height;
       const fileSizeKB = file.size / 1024;
       const format = file.type.split('/')[1].toLowerCase();
-
       const minWidth = 800;
       const minHeight = 600;
       const maxFileSizeKB = 5000;
       const allowedFormats = ['jpg', 'jpeg', 'png'];
-
       if (width < minWidth || height < minHeight) {
         resolve({
           isValid: false,
@@ -89,10 +86,8 @@ const checkImageQuality = (file: File): Promise<{ isValid: boolean; message: str
           message: 'Ảnh đạt yêu cầu.',
         });
       }
-
       URL.revokeObjectURL(url);
     };
-
     img.onerror = () => {
       resolve({
         isValid: false,
@@ -100,7 +95,6 @@ const checkImageQuality = (file: File): Promise<{ isValid: boolean; message: str
       });
       URL.revokeObjectURL(url);
     };
-
     img.src = url;
   });
 };
@@ -144,39 +138,32 @@ export default function CaslaQuartzImageGenerator() {
   const uploadImageToTensorArt = async (imageData: string): Promise<string> => {
     const url = `${TENSOR_ART_API_URL}/resource/image`;
     const payload = { expireSec: 7200 };
-
     try {
       const response = await fetch(url, {
         method: 'POST',
         headers,
         body: JSON.stringify(payload),
       });
-
       const responseText = await response.text();
       if (!response.ok) {
         throw new Error(`POST failed: ${response.status} - ${responseText}`);
       }
-
       const resourceResponse = JSON.parse(responseText);
       const putUrl = resourceResponse.putUrl as string;
       const resourceId = resourceResponse.resourceId as string;
       const putHeaders = (resourceResponse.headers as Record<string, string>) || { 'Content-Type': 'image/jpeg' };
-
       if (!putUrl || !resourceId) {
         throw new Error(`Invalid response: ${JSON.stringify(resourceResponse)}`);
       }
-
       const imageBlob = await (await fetch(imageData)).blob();
       const putResponse = await fetch(putUrl, {
         method: 'PUT',
         headers: putHeaders,
         body: imageBlob,
       });
-
       if (![200, 203].includes(putResponse.status)) {
         throw new Error(`PUT failed: ${putResponse.status} - ${await putResponse.text()}`);
       }
-
       await new Promise((resolve) => setTimeout(resolve, 10000));
       return resourceId;
     } catch (error) {
@@ -190,7 +177,6 @@ export default function CaslaQuartzImageGenerator() {
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       const response = await axios.get(`${TENSOR_ART_API_URL}/jobs/${jobId}`, { headers });
       const { status, successInfo, failedInfo } = response.data.job;
-
       if (status === 'SUCCESS') return successInfo.images[0].url;
       if (status === 'FAILED' || status === 'ERROR') throw new Error(failedInfo?.reason || 'Job failed');
       await new Promise((resolve) => setTimeout(resolve, 5000));
@@ -289,13 +275,11 @@ export default function CaslaQuartzImageGenerator() {
       setError('Vui lòng tải ảnh, chọn một sản phẩm và chọn/nhập vị trí đặt đá.');
       return;
     }
-
     setGeneratedImage(null);
     setProgress(0);
     setCurrentQuote(0);
     setLoading(true);
     setError(null);
-
     try {
       // Upload ảnh input từ người dùng
       const imageResourceId = await uploadImageToTensorArt(uploadedImage);
@@ -305,29 +289,27 @@ export default function CaslaQuartzImageGenerator() {
       // Upload ảnh texture
       const textureResourceId = await uploadImageToTensorArt(textureFilePath);
 
-      // Chuẩn bị dữ liệu cho workflow template với cấu trúc từ template "CaslaQuartz AI"
+      // Sửa cấu trúc fields thành mảng trực tiếp
       const workflowData = {
         request_id: createMD5(),
         templateId: WORKFLOW_TEMPLATE_ID,
-        fields: {
-          fieldAttrs: [
-            {
-              nodeId: "731", // Node cho ảnh input
-              fieldName: "image",
-              fieldValue: imageResourceId, // Resource ID của ảnh input
-            },
-            {
-              nodeId: "734", // Node cho text (vị trí)
-              fieldName: "Text", // Lưu ý: "Text" với chữ T viết hoa
-              fieldValue: position.toLowerCase(), // Vị trí đặt đá
-            },
-            {
-              nodeId: "735", // Node cho ảnh texture
-              fieldName: "image",
-              fieldValue: textureResourceId, // Resource ID của ảnh texture
-            },
-          ],
-        },
+        fields: [
+          {
+            nodeId: "731", // Node cho ảnh input
+            fieldName: "image",
+            fieldValue: imageResourceId, // Resource ID của ảnh input
+          },
+          {
+            nodeId: "734", // Node cho text (vị trí)
+            fieldName: "text", // ❗️Chuyển thành chữ thường
+            fieldValue: position.toLowerCase(), // Vị trí đặt đá
+          },
+          {
+            nodeId: "735", // Node cho ảnh texture
+            fieldName: "image",
+            fieldValue: textureResourceId, // Resource ID của ảnh texture
+          },
+        ],
       };
 
       // Gửi yêu cầu tạo job từ workflow template
@@ -356,17 +338,14 @@ export default function CaslaQuartzImageGenerator() {
       setError('Vui lòng nhập mô tả và chọn ít nhất một sản phẩm.');
       return;
     }
-
     setGeneratedImage(null);
     setProgress(0);
     setCurrentQuote(0);
     setLoading(true);
     setError(null);
-
     try {
       const [width, height] = text2ImgSize.split('x').map(Number);
       const fullPrompt = `${prompt}, featuring ${text2imgSelectedProducts.join(', ')} quartz marble`;
-
       const txt2imgData = {
         request_id: createMD5(),
         stages: [
@@ -389,7 +368,6 @@ export default function CaslaQuartzImageGenerator() {
           },
         ],
       };
-
       const response = await axios.post(`${TENSOR_ART_API_URL}/jobs`, txt2imgData, { headers });
       const jobId = response.data.job.id;
       const imageUrl = await pollJobStatus(jobId);
@@ -425,7 +403,6 @@ export default function CaslaQuartzImageGenerator() {
             <img src="logo.png" alt="Casla Quartz Logo" />
             <h1>Đưa Kiệt Tác Vào Công Trình Của Bạn!</h1>
           </header>
-
           <div className="tab-container">
             <UsageGuide />
             <div className="tab-buttons">
@@ -443,7 +420,6 @@ export default function CaslaQuartzImageGenerator() {
               </button>
             </div>
           </div>
-
           <div className="grid-container">
             <div className="input-area">
               {activeTab === 'img2img' && (
@@ -578,8 +554,7 @@ export default function CaslaQuartzImageGenerator() {
                     <>
                       <img src={generatedImage} alt="Generated" className="generated-image" />
                       <a href={generatedImage} download="generated_image.png" className="download-button">
-                        Tải ảnh về máy
-                      </a>
+                        Tải ảnh về máy</a>
                     </>
                   );
                 }
