@@ -412,7 +412,7 @@ export default function CaslaQuartzImageGenerator() {
       interval = setInterval(() => {
         setProgress((prev) => Math.min(prev + 1, 100));
         setCurrentQuote((prev) => (prev + 1) % quotes.length);
-      }, 400);
+      }, 2000); // Tăng lên 2000ms (2 giây) để tốc độ vừa phải
     }
     return () => clearInterval(interval);
   }, [loading]);
