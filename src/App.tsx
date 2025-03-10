@@ -2,6 +2,24 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Footer from './components/Footer';
 import UsageGuide from './components/UsageGuide';
+const protobuf = require('protobufjs');
+
+// Define protobuf schema
+const workflowSchema = `
+  message WorkflowRequest {
+    string request_id = 1;
+    string templateId = 2;
+    repeated Field fields = 3;
+  }
+  message Field {
+    string nodeId = 1;
+    string fieldName = 2;
+    string fieldValue = 3;
+  }
+`;
+
+const root = protobuf.parse(workflowSchema).root;
+const WorkflowRequest = root.lookupType('WorkflowRequest');
 
 // Define types
 type TabType = 'img2img' | 'text2img';
@@ -129,7 +147,7 @@ export default function CaslaQuartzImageGenerator() {
   ];
 
   const headers = {
-    'Content-Type': 'application/json',
+    'Content-Type': 'application/x-protobuf',
     Accept: 'application/json',
     Authorization: `Bearer ${process.env.REACT_APP_TENSOR_ART_API_KEY}`,
   };
@@ -140,7 +158,11 @@ export default function CaslaQuartzImageGenerator() {
     try {
       const response = await fetch(url, {
         method: 'POST',
-        headers,
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          Authorization: `Bearer ${process.env.REACT_APP_TENSOR_ART_API_KEY}`,
+        },
         body: JSON.stringify(payload),
       });
       const responseText = await response.text();
@@ -286,7 +308,8 @@ export default function CaslaQuartzImageGenerator() {
       if (!textureFilePath) throw new Error(`Không tìm thấy ảnh sản phẩm cho ${selectedProduct}`);
       const textureResourceId = await uploadImageToTensorArt(textureFilePath);
 
-      const workflowData = {
+      // Tạo dữ liệu protobuf
+      const message = WorkflowRequest.create({
         request_id: generateRequestId(),
         templateId: WORKFLOW_TEMPLATE_ID,
         fields: [
@@ -294,15 +317,23 @@ export default function CaslaQuartzImageGenerator() {
           { nodeId: "734", fieldName: "text", fieldValue: position.toLowerCase() },
           { nodeId: "735", fieldName: "image", fieldValue: textureResourceId },
         ],
-      };
+      });
 
-      console.log('Sending workflowData:', JSON.stringify(workflowData, null, 2));
+      // Mã hóa thành buffer nhị phân
+      const buffer = WorkflowRequest.encode(message).finish();
 
+      console.log('Sending protobuf buffer:', buffer);
+
+      // Gửi yêu cầu với Content-Type là application/x-protobuf
       const response = await axios.post(
         `${TENSOR_ART_API_URL}/jobs/workflow/template`,
-        workflowData,
-        { headers }
+        buffer,
+        {
+          headers,
+          responseType: 'json',
+        }
       );
+
       const jobId = response.data.job.id;
       const imageUrl = await pollJobStatus(jobId);
       setGeneratedImage(imageUrl);
@@ -357,7 +388,13 @@ export default function CaslaQuartzImageGenerator() {
 
       console.log('Sending txt2imgData:', JSON.stringify(txt2imgData, null, 2));
 
-      const response = await axios.post(`${TENSOR_ART_API_URL}/jobs`, txt2imgData, { headers });
+      const response = await axios.post(`${TENSOR_ART_API_URL}/jobs`, txt2imgData, {
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          Authorization: `Bearer ${process.env.REACT_APP_TENSOR_ART_API_KEY}`,
+        },
+      });
       const jobId = response.data.job.id;
       const imageUrl = await pollJobStatus(jobId);
       setGeneratedImage(imageUrl);
