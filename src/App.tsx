@@ -98,9 +98,12 @@ export default function CaslaQuartzImageGenerator() {
       });
 
       fabric.Image.fromURL(uploadedImage, (img: fabric.Image) => {
-        newCanvas.setWidth(img.width!);
-        newCanvas.setHeight(img.height!);
+        const scale = Math.min(1, 800 / img.width!, 600 / img.height!); // Giới hạn kích thước canvas
+        img.scale(scale);
+        newCanvas.setWidth(img.width! * scale);
+        newCanvas.setHeight(img.height! * scale);
         newCanvas.add(img);
+        newCanvas.renderAll();
       });
 
       setCanvas(newCanvas);
@@ -214,69 +217,69 @@ export default function CaslaQuartzImageGenerator() {
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => e.preventDefault();
 
   const processImg2Img = async () => {
-  if (!uploadedImage || !maskImage || !productCode) {
-    setError('Vui lòng tải ảnh, vẽ mask và nhập mã sản phẩm.');
-    return;
-  }
-  if (!validateProductCode(productCode)) {
-    setError('Mã sản phẩm không hợp lệ. Vui lòng chọn từ danh sách sản phẩm.');
-    return;
-  }
-  setGeneratedImages([]);
-  setProgress(0);
-  setCurrentQuote(0);
-  setLoading(true);
-  setError(null);
-
-  try {
-    // Upload ảnh input từ người dùng (ảnh đã được tạo mask)
-    const imageResourceId = await uploadImageToTensorArt(uploadedImage);
-    // Upload ảnh sản phẩm
-    const productImageUrl = PRODUCT_IMAGE_MAP[productCode];
-    const productImageResourceId = await uploadImageToTensorArt(productImageUrl);
-
-    // Chuẩn bị dữ liệu cho workflow template
-    const workflowData = {
-      request_id: Date.now().toString(),
-      templateId: WORKFLOW_TEMPLATE_ID,
-      fields: {
-        fieldAttrs: [
-          {
-            nodeId: "731", // Node cho ảnh đã được tạo mask
-            fieldName: "image",
-            fieldValue: imageResourceId,
-          },
-          {
-            nodeId: "735", // Node cho ảnh sản phẩm
-            fieldName: "image",
-            fieldValue: productImageResourceId,
-          },
-        ],
-      },
-    };
-
-    // Gửi yêu cầu tạo job từ workflow template
-    const response = await axios.post(
-      `${TENSOR_ART_API_URL}/jobs/workflow/template`,
-      workflowData,
-      { headers }
-    );
-    const jobId = response.data.job.id;
-    const imageUrl = await pollJobStatus(jobId);
-    setGeneratedImages([imageUrl]);
-    toast.success('Tạo ảnh thành công!');
-  } catch (err: unknown) {
-    if (axios.isAxiosError(err) && err.response) {
-      setError(`Lỗi từ server: ${err.response.data.message || err.message}`);
-    } else {
-      setError(`Có lỗi xảy ra khi tạo ảnh: ${(err as Error).message}`);
+    if (!uploadedImage || !maskImage || !productCode) {
+      setError('Vui lòng tải ảnh, vẽ mask và nhập mã sản phẩm.');
+      return;
     }
-    console.error(err);
-    toast.error('Có lỗi xảy ra khi tạo ảnh');
-  } finally {
-    setLoading(false);
-  }
-};
+    if (!validateProductCode(productCode)) {
+      setError('Mã sản phẩm không hợp lệ. Vui lòng chọn từ danh sách sản phẩm.');
+      return;
+    }
+    setGeneratedImages([]);
+    setProgress(0);
+    setCurrentQuote(0);
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Upload ảnh input từ người dùng (ảnh đã được tạo mask)
+      const imageResourceId = await uploadImageToTensorArt(uploadedImage);
+      // Upload ảnh sản phẩm
+      const productImageUrl = PRODUCT_IMAGE_MAP[productCode];
+      const productImageResourceId = await uploadImageToTensorArt(productImageUrl);
+
+      // Chuẩn bị dữ liệu cho workflow template
+      const workflowData = {
+        request_id: Date.now().toString(), // Sử dụng timestamp làm request_id
+        templateId: WORKFLOW_TEMPLATE_ID,
+        fields: {
+          fieldAttrs: [
+            {
+              nodeId: "731", // Node cho ảnh đã được tạo mask
+              fieldName: "image",
+              fieldValue: imageResourceId,
+            },
+            {
+              nodeId: "735", // Node cho ảnh sản phẩm
+              fieldName: "image",
+              fieldValue: productImageResourceId,
+            },
+          ],
+        },
+      };
+
+      // Gửi yêu cầu tạo job từ workflow template
+      const response = await axios.post(
+        `${TENSOR_ART_API_URL}/jobs/workflow/template`,
+        workflowData,
+        { headers }
+      );
+      const jobId = response.data.job.id;
+      const imageUrl = await pollJobStatus(jobId);
+      setGeneratedImages([imageUrl]);
+      toast.success('Tạo ảnh thành công!');
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err) && err.response) {
+        setError(`Lỗi từ server: ${err.response.data.message || err.message}`);
+      } else {
+        setError(`Có lỗi xảy ra khi tạo ảnh: ${(err as Error).message}`);
+      }
+      console.error(err);
+      toast.error('Có lỗi xảy ra khi tạo ảnh');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
