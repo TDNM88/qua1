@@ -11,12 +11,7 @@ type TabType = 'img2img' | 'text2img';
 
 // Cấu hình API TensorArt
 const TENSOR_ART_API_URL = "https://ap-east-1.tensorart.cloud/v1";
-const WORKFLOW_TEMPLATE_ID = "837405094118019506"; // Workflow template ID
-
-// Hàm tạo request_id ngẫu nhiên
-const createMD5 = () => {
-  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-};
+const WORKFLOW_TEMPLATE_ID = "837405094118019506";
 
 const PRODUCTS = [
   "C1012 Glacier White", "C1026 Polar", "C3269 Ash Grey", "C3168 Silver Wave", "C1005 Milky White",
