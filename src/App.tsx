@@ -3,6 +3,7 @@ import axios from 'axios';
 import Footer from './components/Footer';
 import UsageGuide from './components/UsageGuide';
 import * as protobuf from 'protobufjs';
+import './App.css';
 
 // Định nghĩa schema protobuf
 const workflowSchema = `
@@ -26,7 +27,7 @@ const TENSOR_ART_API_URL = "https://ap-east-1.tensorart.cloud/v1";
 const WORKFLOW_TEMPLATE_ID = "837405094118019506";
 
 // Danh sách sản phẩm
-const PRODUCTS = [
+const PRODUCTS: string[] = [
   "C1012 Glacier White", "C1026 Polar", "C3269 Ash Grey", "C3168 Silver Wave", "C1005 Milky White",
   "C2103 Onyx Carrara", "C2104 Massa", "C3105 Casla Cloudy", "C3146 Casla Nova", "C2240 Marquin",
   "C2262 Concrete (Honed)", "C3311 Calacatta Sky", "C3346 Massimo", "C4143 Mario", "C4145 Marina",
@@ -36,7 +37,7 @@ const PRODUCTS = [
 ];
 
 // Bản đồ ảnh sản phẩm
-const PRODUCT_IMAGE_MAP = {
+const PRODUCT_IMAGE_MAP: { [key: string]: string } = {
   "C1012 Glacier White": `${process.env.PUBLIC_URL}/product_images/C1012.jpg`,
   "C1026 Polar": `${process.env.PUBLIC_URL}/product_images/C1026.jpg`,
   "C3269 Ash Grey": `${process.env.PUBLIC_URL}/product_images/C3269.jpg`,
@@ -66,27 +67,27 @@ const PRODUCT_IMAGE_MAP = {
 };
 
 // Hàm tạo request_id ngẫu nhiên
-const createMD5 = () => {
+const createMD5 = (): string => {
   return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 };
 
 export default function CaslaQuartzImageGenerator() {
-  const [activeTab, setActiveTab] = useState('img2img');
-  const [uploadedImage, setUploadedImage] = useState(null);
-  const [position, setPosition] = useState('floor');
-  const [isCustomPosition, setIsCustomPosition] = useState(false);
-  const [img2imgSize, setImg2ImgSize] = useState('1024x1024');
-  const [text2ImgSize, setText2ImgSize] = useState('1024x1024');
-  const [prompt, setPrompt] = useState('');
-  const [generatedImages, setGeneratedImages] = useState([]); // Đổi sang mảng để lưu 10 ảnh
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [img2imgSelectedProducts, setImg2ImgSelectedProducts] = useState([]);
-  const [text2imgSelectedProducts, setText2ImgSelectedProducts] = useState([]);
-  const [progress, setProgress] = useState(0);
-  const [currentQuote, setCurrentQuote] = useState(0);
+  const [activeTab, setActiveTab] = useState<'img2img' | 'text2img'>('img2img');
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [position, setPosition] = useState<string>('floor');
+  const [isCustomPosition, setIsCustomPosition] = useState<boolean>(false);
+  const [img2imgSize, setImg2ImgSize] = useState<string>('1024x1024');
+  const [text2ImgSize, setText2ImgSize] = useState<string>('1024x1024');
+  const [prompt, setPrompt] = useState<string>('');
+  const [generatedImages, setGeneratedImages] = useState<string[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [img2imgSelectedProducts, setImg2ImgSelectedProducts] = useState<string[]>([]);
+  const [text2imgSelectedProducts, setText2ImgSelectedProducts] = useState<string[]>([]);
+  const [progress, setProgress] = useState<number>(0);
+  const [currentQuote, setCurrentQuote] = useState<number>(0);
 
-  const quotes = [
+  const quotes: string[] = [
     "Đá thạch anh mang lại sự sang trọng và bền bỉ cho mọi không gian.",
     "Thiết kế đẹp bắt đầu từ những chi tiết nhỏ nhất.",
     "CaslaQuartz - Sự lựa chọn hoàn hảo cho ngôi nhà hiện đại.",
@@ -96,12 +97,12 @@ export default function CaslaQuartzImageGenerator() {
   ];
 
   const headers = {
-    'Content-Type': 'application/x-protobuf', // Sử dụng protobuf cho workflow template
+    'Content-Type': 'application/x-protobuf',
     Accept: 'application/json',
     Authorization: `Bearer ${process.env.REACT_APP_TENSOR_ART_API_KEY}`,
   };
 
-  const uploadImageToTensorArt = async (imageData) => {
+  const uploadImageToTensorArt = async (imageData: string): Promise<string> => {
     const url = `${TENSOR_ART_API_URL}/resource/image`;
     const payload = { expireSec: 7200 };
     try {
@@ -119,9 +120,9 @@ export default function CaslaQuartzImageGenerator() {
         throw new Error(`POST failed: ${response.status} - ${responseText}`);
       }
       const resourceResponse = JSON.parse(responseText);
-      const putUrl = resourceResponse.putUrl;
-      const resourceId = resourceResponse.resourceId;
-      const putHeaders = resourceResponse.headers || { 'Content-Type': 'image/jpeg' };
+      const putUrl: string = resourceResponse.putUrl;
+      const resourceId: string = resourceResponse.resourceId;
+      const putHeaders: Record<string, string> = resourceResponse.headers || { 'Content-Type': 'image/jpeg' };
       if (!putUrl || !resourceId) {
         throw new Error(`Invalid response: ${JSON.stringify(resourceResponse)}`);
       }
@@ -142,7 +143,7 @@ export default function CaslaQuartzImageGenerator() {
     }
   };
 
-  const pollJobStatus = async (jobId) => {
+  const pollJobStatus = async (jobId: string): Promise<string> => {
     const maxAttempts = 36;
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       const response = await axios.get(`${TENSOR_ART_API_URL}/jobs/${jobId}`, { headers });
@@ -154,7 +155,10 @@ export default function CaslaQuartzImageGenerator() {
     throw new Error('Job timed out after 3 minutes');
   };
 
-  const renderProducts = (selectedProducts, setSelectedProducts) => {
+  const renderProducts = (
+    selectedProducts: string[],
+    setSelectedProducts: (products: string[]) => void
+  ) => {
     return PRODUCTS.map((product) => (
       <button
         key={product}
@@ -180,7 +184,7 @@ export default function CaslaQuartzImageGenerator() {
     ));
   };
 
-  const switchTab = (tab) => {
+  const switchTab = (tab: 'img2img' | 'text2img') => {
     setActiveTab(tab);
     setGeneratedImages([]);
     setLoading(false);
@@ -191,34 +195,34 @@ export default function CaslaQuartzImageGenerator() {
     setText2ImgSelectedProducts([]);
   };
 
-  const handleImageUpload = async (e) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setUploadedImage(reader.result);
+        setUploadedImage(reader.result as string);
         setError(null);
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleDrop = async (e) => {
+  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const file = e.dataTransfer.files[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setUploadedImage(reader.result);
+        setUploadedImage(reader.result as string);
         setError(null);
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleDragOver = (e) => e.preventDefault();
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => e.preventDefault();
 
-  const handlePositionChange = (e) => {
+  const handlePositionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
     if (value === 'custom') {
       setIsCustomPosition(true);
@@ -229,7 +233,7 @@ export default function CaslaQuartzImageGenerator() {
     }
   };
 
-  const handleCustomPositionChange = (e) => {
+  const handleCustomPositionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     if (value.length <= 30) {
       setPosition(value);
@@ -253,18 +257,14 @@ export default function CaslaQuartzImageGenerator() {
     setError(null);
 
     try {
-      // Upload ảnh input từ người dùng
       const imageResourceId = await uploadImageToTensorArt(uploadedImage);
 
-      // Tạo 10 lệnh API đồng thời cho các sản phẩm đã chọn
       const promises = img2imgSelectedProducts.map(async (product) => {
         const textureFilePath = PRODUCT_IMAGE_MAP[product];
         if (!textureFilePath) throw new Error(`Không tìm thấy ảnh sản phẩm cho ${product}`);
 
-        // Upload ảnh texture
         const textureResourceId = await uploadImageToTensorArt(textureFilePath);
 
-        // Chuẩn bị dữ liệu protobuf cho workflow template
         const message = WorkflowRequest.create({
           request_id: createMD5(),
           templateId: WORKFLOW_TEMPLATE_ID,
@@ -277,7 +277,6 @@ export default function CaslaQuartzImageGenerator() {
 
         const buffer = WorkflowRequest.encode(message).finish();
 
-        // Gửi yêu cầu tạo job
         const response = await axios.post(
           `${TENSOR_ART_API_URL}/jobs/workflow/template`,
           buffer,
@@ -287,14 +286,13 @@ export default function CaslaQuartzImageGenerator() {
         return pollJobStatus(jobId);
       });
 
-      // Chờ tất cả các job hoàn thành
       const imageUrls = await Promise.all(promises);
       setGeneratedImages(imageUrls);
     } catch (err) {
       if (axios.isAxiosError(err) && err.response) {
         setError(`Lỗi từ server: ${err.response.data.message || err.message}`);
       } else {
-        setError(`Có lỗi xảy ra khi tạo ảnh: ${err.message}`);
+        setError(`Có lỗi xảy ra khi tạo ảnh: ${(err as Error).message}`);
       }
       console.error(err);
     } finally {
@@ -348,12 +346,12 @@ export default function CaslaQuartzImageGenerator() {
       });
       const jobId = response.data.job.id;
       const imageUrl = await pollJobStatus(jobId);
-      setGeneratedImages([imageUrl]); // Chỉ tạo 1 ảnh cho text2img
+      setGeneratedImages([imageUrl]);
     } catch (err) {
       if (axios.isAxiosError(err) && err.response) {
         setError(`Lỗi từ server: ${err.response.data.message || err.message}`);
       } else {
-        setError(`Có lỗi xảy ra khi tạo ảnh: ${err.message}`);
+        setError(`Có lỗi xảy ra khi tạo ảnh: ${(err as Error).message}`);
       }
       console.error(err);
     } finally {
@@ -362,7 +360,7 @@ export default function CaslaQuartzImageGenerator() {
   };
 
   useEffect(() => {
-    let interval;
+    let interval: NodeJS.Timeout;
     if (loading) {
       interval = setInterval(() => {
         setProgress((prev) => Math.min(prev + 1, 100));
