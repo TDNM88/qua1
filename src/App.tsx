@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Footer from './components/Footer';
 import UsageGuide from './components/UsageGuide';
-import { createHash } from 'crypto'; // Giữ crypto để tạo request_id theo hướng dẫn API
+import { createHash } from 'crypto'; // Thêm crypto để tạo MD5
 
 // Define types
 type TabType = 'img2img' | 'text2img';
@@ -105,14 +105,9 @@ const checkImageQuality = (file: File): Promise<{ isValid: boolean; message: str
   });
 };
 
-// Hàm tạo MD5 (giữ nguyên theo hướng dẫn API)
+// Hàm tạo MD5
 const createMD5 = () => {
   return createHash('md5').update(`${Date.now()}`).digest('hex');
-};
-
-// Hàm tạo seed ngẫu nhiên
-const generateRandomSeed = () => {
-  return Math.floor(Math.random() * 1000000000000000); // Tạo seed ngẫu nhiên trong phạm vi lớn
 };
 
 export default function CaslaQuartzImageGenerator() {
@@ -302,44 +297,34 @@ export default function CaslaQuartzImageGenerator() {
     setError(null);
 
     try {
-      // Upload ảnh input từ người dùng (cho node 67)
+      // Upload ảnh input từ người dùng
       const imageResourceId = await uploadImageToTensorArt(uploadedImage);
       const selectedProduct = img2imgSelectedProducts[0];
       const textureFilePath = PRODUCT_IMAGE_MAP[selectedProduct];
       if (!textureFilePath) throw new Error(`Không tìm thấy ảnh sản phẩm cho ${selectedProduct}`);
-      // Upload ảnh texture (cho node 46)
+      // Upload ảnh texture
       const textureResourceId = await uploadImageToTensorArt(textureFilePath);
 
-      // Chuẩn bị dữ liệu cho workflow template với cấu trúc từ template
+      // Chuẩn bị dữ liệu cho workflow template với cấu trúc từ template "CaslaQuartz AI"
       const workflowData = {
-        request_id: createMD5(), // Tạo request_id bằng MD5 theo hướng dẫn API
+        request_id: createMD5(),
         templateId: WORKFLOW_TEMPLATE_ID,
         fields: {
           fieldAttrs: [
             {
-              nodeId: "49", // Seed
-              fieldName: "seed",
-              fieldValue: generateRandomSeed(), // Tạo seed ngẫu nhiên
-            },
-            {
-              nodeId: "46", // Ảnh sản phẩm (texture)
+              nodeId: "731", // Node cho ảnh input
               fieldName: "image",
-              fieldValue: textureResourceId, // Resource ID của ảnh sản phẩm
+              fieldValue: imageResourceId, // Resource ID của ảnh input
             },
             {
-              nodeId: "47", // Checkpoint
-              fieldName: "ckpt_name",
-              fieldValue: "799485016842306392", // Giá trị mặc định
-            },
-            {
-              nodeId: "67", // Ảnh người dùng tải lên
-              fieldName: "image",
-              fieldValue: imageResourceId, // Resource ID của ảnh người dùng
-            },
-            {
-              nodeId: "68", // Vị trí
-              fieldName: "Text",
+              nodeId: "734", // Node cho text (vị trí)
+              fieldName: "Text", // Lưu ý: "Text" với chữ T viết hoa
               fieldValue: position.toLowerCase(), // Vị trí đặt đá
+            },
+            {
+              nodeId: "735", // Node cho ảnh texture
+              fieldName: "image",
+              fieldValue: textureResourceId, // Resource ID của ảnh texture
             },
           ],
         },
