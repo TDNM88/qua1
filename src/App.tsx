@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { fabric } from 'fabric';
+import fabric from 'fabric'; // Sử dụng default import để tránh lỗi TS2595
 import Footer from './components/Footer';
 import UsageGuide from './components/UsageGuide';
 
@@ -79,7 +79,7 @@ const App: React.FC = () => {
   const headers = {
     'Content-Type': 'application/json',
     Accept: 'application/json',
-    Authorization: `Bearer ${process.env.REACT_APP_TENSOR_ART_API_KEY || ''}`, // Đảm bảo API key có giá trị
+    Authorization: `Bearer ${process.env.REACT_APP_TENSOR_ART_API_KEY || ''}`,
   };
 
   // Khởi tạo canvas khi ảnh được upload
