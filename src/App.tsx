@@ -22,11 +22,9 @@ const workflowSchema = `
 const root = protobuf.parse(workflowSchema).root;
 const WorkflowRequest = root.lookupType('WorkflowRequest');
 
-// Cấu hình API TensorArt
 const TENSOR_ART_API_URL = "https://ap-east-1.tensorart.cloud/v1";
 const WORKFLOW_TEMPLATE_ID = "837405094118019506";
 
-// Danh sách sản phẩm
 const PRODUCTS: string[] = [
   "C1012 Glacier White", "C1026 Polar", "C3269 Ash Grey", "C3168 Silver Wave", "C1005 Milky White",
   "C2103 Onyx Carrara", "C2104 Massa", "C3105 Casla Cloudy", "C3146 Casla Nova", "C2240 Marquin",
@@ -36,7 +34,6 @@ const PRODUCTS: string[] = [
   "C4221 Athena", "C4255 Calacatta Extra"
 ];
 
-// Bản đồ ảnh sản phẩm
 const PRODUCT_IMAGE_MAP: { [key: string]: string } = {
   "C1012 Glacier White": `${process.env.PUBLIC_URL}/product_images/C1012.jpg`,
   "C1026 Polar": `${process.env.PUBLIC_URL}/product_images/C1026.jpg`,
@@ -66,7 +63,6 @@ const PRODUCT_IMAGE_MAP: { [key: string]: string } = {
   "C4255 Calacatta Extra": `${process.env.PUBLIC_URL}/product_images/C4255.jpg`,
 };
 
-// Hàm tạo request_id ngẫu nhiên
 const createMD5 = (): string => {
   return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 };
@@ -79,7 +75,7 @@ export default function CaslaQuartzImageGenerator() {
   const [img2imgSize, setImg2ImgSize] = useState<string>('1024x1024');
   const [text2ImgSize, setText2ImgSize] = useState<string>('1024x1024');
   const [prompt, setPrompt] = useState<string>('');
-  const [generatedImages, setGeneratedImages] = useState<string[]>([]);
+  const [generatedImages, setGeneratedImages] = useState<string[]>([]); // Đổi sang mảng để hỗ trợ nhiều ảnh
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [img2imgSelectedProducts, setImg2ImgSelectedProducts] = useState<string[]>([]);
@@ -116,26 +112,20 @@ export default function CaslaQuartzImageGenerator() {
         body: JSON.stringify(payload),
       });
       const responseText = await response.text();
-      if (!response.ok) {
-        throw new Error(`POST failed: ${response.status} - ${responseText}`);
-      }
+      if (!response.ok) throw new Error(`POST failed: ${response.status} - ${responseText}`);
       const resourceResponse = JSON.parse(responseText);
       const putUrl: string = resourceResponse.putUrl;
       const resourceId: string = resourceResponse.resourceId;
       const putHeaders: Record<string, string> = resourceResponse.headers || { 'Content-Type': 'image/jpeg' };
-      if (!putUrl || !resourceId) {
-        throw new Error(`Invalid response: ${JSON.stringify(resourceResponse)}`);
-      }
+      if (!putUrl || !resourceId) throw new Error(`Invalid response: ${JSON.stringify(resourceResponse)}`);
       const imageBlob = await (await fetch(imageData)).blob();
       const putResponse = await fetch(putUrl, {
         method: 'PUT',
         headers: putHeaders,
         body: imageBlob,
       });
-      if (![200, 203].includes(putResponse.status)) {
-        throw new Error(`PUT failed: ${putResponse.status} - ${await putResponse.text()}`);
-      }
-      await new Promise((resolve) => setTimeout(resolve, 10000));
+      if (![200, 203].includes(putResponse.status)) throw new Error(`PUT failed: ${putResponse.status}`);
+      await new Promise(resolve => setTimeout(resolve, 10000));
       return resourceId;
     } catch (error) {
       console.error('Upload error:', error);
@@ -150,7 +140,7 @@ export default function CaslaQuartzImageGenerator() {
       const { status, successInfo, failedInfo } = response.data.job;
       if (status === 'SUCCESS') return successInfo.images[0].url;
       if (status === 'FAILED' || status === 'ERROR') throw new Error(failedInfo?.reason || 'Job failed');
-      await new Promise((resolve) => setTimeout(resolve, 5000));
+      await new Promise(resolve => setTimeout(resolve, 5000));
     }
     throw new Error('Job timed out after 3 minutes');
   };
@@ -159,21 +149,21 @@ export default function CaslaQuartzImageGenerator() {
     selectedProducts: string[],
     setSelectedProducts: (products: string[]) => void
   ) => {
-    return PRODUCTS.map((product) => (
+    return PRODUCTS.map(product => (
       <button
         key={product}
         className={`product-button ${selectedProducts.includes(product) ? 'active' : ''}`}
         onClick={() => {
           if (activeTab === 'img2img') {
             if (selectedProducts.includes(product)) {
-              setImg2ImgSelectedProducts(selectedProducts.filter((p) => p !== product));
+              setImg2ImgSelectedProducts(selectedProducts.filter(p => p !== product));
             } else if (selectedProducts.length < 10) {
               setImg2ImgSelectedProducts([...selectedProducts, product]);
             }
           } else {
             setText2ImgSelectedProducts(
               selectedProducts.includes(product)
-                ? selectedProducts.filter((p) => p !== product)
+                ? selectedProducts.filter(p => p !== product)
                 : [...selectedProducts, product]
             );
           }
@@ -195,7 +185,7 @@ export default function CaslaQuartzImageGenerator() {
     setText2ImgSelectedProducts([]);
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
@@ -207,7 +197,7 @@ export default function CaslaQuartzImageGenerator() {
     }
   };
 
-  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const file = e.dataTransfer.files[0];
     if (file) {
@@ -235,9 +225,7 @@ export default function CaslaQuartzImageGenerator() {
 
   const handleCustomPositionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    if (value.length <= 30) {
-      setPosition(value);
-    }
+    if (value.length <= 30) setPosition(value);
   };
 
   const processImg2Img = async () => {
@@ -259,7 +247,7 @@ export default function CaslaQuartzImageGenerator() {
     try {
       const imageResourceId = await uploadImageToTensorArt(uploadedImage);
 
-      const promises = img2imgSelectedProducts.map(async (product) => {
+      const promises = img2imgSelectedProducts.map(async product => {
         const textureFilePath = PRODUCT_IMAGE_MAP[product];
         if (!textureFilePath) throw new Error(`Không tìm thấy ảnh sản phẩm cho ${product}`);
 
@@ -363,8 +351,8 @@ export default function CaslaQuartzImageGenerator() {
     let interval: NodeJS.Timeout;
     if (loading) {
       interval = setInterval(() => {
-        setProgress((prev) => Math.min(prev + 1, 100));
-        setCurrentQuote((prev) => (prev + 1) % quotes.length);
+        setProgress(prev => Math.min(prev + 1, 100));
+        setCurrentQuote(prev => (prev + 1) % quotes.length);
       }, 2000);
     }
     return () => clearInterval(interval);
@@ -456,7 +444,7 @@ export default function CaslaQuartzImageGenerator() {
                     <select
                       id="size-img2img"
                       value={img2imgSize}
-                      onChange={(e) => setImg2ImgSize(e.target.value)}
+                      onChange={e => setImg2ImgSize(e.target.value)}
                     >
                       <option value="1152x768">1152x768</option>
                       <option value="1024x1024">1024x1024</option>
@@ -486,7 +474,7 @@ export default function CaslaQuartzImageGenerator() {
                       id="prompt"
                       placeholder="Nhập mô tả chi tiết..."
                       value={prompt}
-                      onChange={(e) => setPrompt(e.target.value)}
+                      onChange={e => setPrompt(e.target.value)}
                     />
                   </div>
                   <div>
@@ -494,7 +482,7 @@ export default function CaslaQuartzImageGenerator() {
                     <select
                       id="size-text2img"
                       value={text2ImgSize}
-                      onChange={(e) => setText2ImgSize(e.target.value)}
+                      onChange={e => setText2ImgSize(e.target.value)}
                     >
                       <option value="1024x1024">1024x1024</option>
                       <option value="768x512">768x512</option>
