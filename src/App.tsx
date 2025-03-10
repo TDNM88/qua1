@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import fabric from 'fabric'; // Named import từ fabric
+import { fabric } from 'fabric';
 import Footer from './components/Footer';
 import UsageGuide from './components/UsageGuide';
 
@@ -51,7 +51,7 @@ const PRODUCT_IMAGE_MAP: { [key: string]: string } = {
   "C4255 Calacatta Extra": `${process.env.PUBLIC_URL}/product_images/C4255.jpg`,
 };
 
-const CaslaQuartzImageGenerator: React.FC = () => {
+const App: React.FC = () => {
   const [productCode, setProductCode] = useState<string>('');
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [generatedImages, setGeneratedImages] = useState<string[]>([]);
@@ -79,7 +79,7 @@ const CaslaQuartzImageGenerator: React.FC = () => {
   const headers = {
     'Content-Type': 'application/json',
     Accept: 'application/json',
-    Authorization: `Bearer ${process.env.REACT_APP_TENSOR_ART_API_KEY}`,
+    Authorization: `Bearer ${process.env.REACT_APP_TENSOR_ART_API_KEY || ''}`, // Đảm bảo API key có giá trị
   };
 
   // Khởi tạo canvas khi ảnh được upload
@@ -87,6 +87,8 @@ const CaslaQuartzImageGenerator: React.FC = () => {
     if (uploadedImage && canvasRef.current && !canvas) {
       const newCanvas = new fabric.Canvas(canvasRef.current, {
         isDrawingMode: true,
+        width: 800,
+        height: 600,
       });
 
       newCanvas.freeDrawingBrush = new fabric.PencilBrush(newCanvas);
@@ -95,13 +97,20 @@ const CaslaQuartzImageGenerator: React.FC = () => {
 
       fabric.Image.fromURL(uploadedImage, (img) => {
         if (!img.width || !img.height) {
-          console.error("Invalid image dimensions");
+          console.error('Invalid image dimensions');
           return;
         }
         const scale = Math.min(1, 800 / img.width, 600 / img.height);
-        newCanvas.setWidth(img.width * scale);
-        newCanvas.setHeight(img.height * scale);
-        newCanvas.setBackgroundImage(img, newCanvas.renderAll.bind(newCanvas));
+        img.scale(scale);
+        newCanvas.setDimensions({
+          width: img.width * scale,
+          height: img.height * scale,
+        });
+        newCanvas.setBackgroundImage(img, newCanvas.renderAll.bind(newCanvas), {
+          scaleX: scale,
+          scaleY: scale,
+        });
+        console.log('Canvas initialized with image:', uploadedImage);
       }, { crossOrigin: 'anonymous' });
 
       setCanvas(newCanvas);
@@ -113,7 +122,7 @@ const CaslaQuartzImageGenerator: React.FC = () => {
     }
   }, [uploadedImage]);
 
-  // Cập nhật brush settings khi thay đổi
+  // Cập nhật brush settings
   useEffect(() => {
     if (canvas) {
       canvas.freeDrawingBrush.width = brushSize;
@@ -122,13 +131,15 @@ const CaslaQuartzImageGenerator: React.FC = () => {
     }
   }, [brushSize, brushColor, canvas]);
 
-  // Lưu mask khi người dùng vẽ
+  // Cập nhật mask khi vẽ
   useEffect(() => {
     if (canvas) {
       const updateMask = () => {
-        const maskData = canvas.toDataURL({ format: 'png', quality: 1 });
-        setMaskImage(maskData);
-        console.log("Mask updated:", maskData);
+        if (canvas) {
+          const maskData = canvas.toDataURL({ format: 'png', quality: 1 });
+          setMaskImage(maskData);
+          console.log('Mask updated:', maskData);
+        }
       };
       canvas.on('mouse:up', updateMask);
       return () => canvas.off('mouse:up', updateMask);
@@ -143,7 +154,7 @@ const CaslaQuartzImageGenerator: React.FC = () => {
       const imageUrl = URL.createObjectURL(file);
       setUploadedImage(imageUrl);
       setError(null);
-      console.log("Image uploaded:", imageUrl);
+      console.log('Image uploaded:', imageUrl);
     }
   };
 
@@ -154,7 +165,7 @@ const CaslaQuartzImageGenerator: React.FC = () => {
       const imageUrl = URL.createObjectURL(file);
       setUploadedImage(imageUrl);
       setError(null);
-      console.log("Image dropped:", imageUrl);
+      console.log('Image dropped:', imageUrl);
     }
   };
 
@@ -169,18 +180,15 @@ const CaslaQuartzImageGenerator: React.FC = () => {
         headers,
         body: JSON.stringify(payload),
       });
-      const responseText = await response.text();
-      if (!response.ok) throw new Error(`Upload failed: ${response.status} - ${responseText}`);
-      const resourceResponse = JSON.parse(responseText);
-      const putUrl = resourceResponse.putUrl as string;
-      const resourceId = resourceResponse.resourceId as string;
-      const putHeaders = (resourceResponse.headers as Record<string, string>) || { 'Content-Type': 'image/png' };
-      if (!putUrl || !resourceId) throw new Error(`Invalid response: ${JSON.stringify(resourceResponse)}`);
-
+      if (!response.ok) throw new Error(`Upload failed: ${response.status}`);
+      const resourceResponse = await response.json();
+      const putUrl = resourceResponse.putUrl;
+      const resourceId = resourceResponse.resourceId;
+      if (!putUrl || !resourceId) throw new Error('Invalid API response');
       const imageBlob = await (await fetch(imageData)).blob();
       const putResponse = await fetch(putUrl, {
         method: 'PUT',
-        headers: putHeaders,
+        headers: { 'Content-Type': 'image/png' },
         body: imageBlob,
       });
       if (![200, 203].includes(putResponse.status)) throw new Error(`PUT failed: ${putResponse.status}`);
@@ -221,6 +229,7 @@ const CaslaQuartzImageGenerator: React.FC = () => {
     setError(null);
 
     try {
+      console.log('Processing with:', { maskImage, productCode });
       const imageResourceId = await uploadImageToTensorArt(maskImage);
       const productImageResourceId = await uploadImageToTensorArt(PRODUCT_IMAGE_MAP[productCode]);
 
@@ -240,6 +249,7 @@ const CaslaQuartzImageGenerator: React.FC = () => {
       const imageUrl = await pollJobStatus(jobId);
       setGeneratedImages([imageUrl]);
       toast.success('Tạo ảnh thành công!');
+      console.log('Generated image:', imageUrl);
     } catch (err) {
       const errorMessage = axios.isAxiosError(err) && err.response
         ? `Lỗi từ server: ${err.response.data.message || err.message}`
@@ -275,11 +285,11 @@ const CaslaQuartzImageGenerator: React.FC = () => {
 
   return (
     <div className="app-container">
-      <ToastContainer position="bottom-right" autoClose={3000} />
+      <ToastContainer position="bottom-right" autoClose={3000} hideProgressBar={false} />
       <div className="overlay">
         <div className="content">
           <header className="header">
-            <img src="logo.png" alt="Casla Quartz Logo" />
+            <img src={`${process.env.PUBLIC_URL}/logo.png`} alt="Casla Quartz Logo" />
             <h1>Đưa Kiệt Tác Vào Công Trình Của Bạn!</h1>
           </header>
           <div className="tab-container">
@@ -289,7 +299,7 @@ const CaslaQuartzImageGenerator: React.FC = () => {
             <div className="input-area">
               <div className="dropzone" onDrop={handleDrop} onDragOver={handleDragOver}>
                 {uploadedImage ? (
-                  <canvas ref={canvasRef} style={{ border: '1px solid #ccc' }} />
+                  <canvas ref={canvasRef} id="mask-canvas" />
                 ) : (
                   <div onClick={() => document.getElementById('image-upload')?.click()}>
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -322,7 +332,9 @@ const CaslaQuartzImageGenerator: React.FC = () => {
                   ))}
                 </datalist>
                 {productCode && PRODUCT_IMAGE_MAP[productCode] && (
-                  <img src={PRODUCT_IMAGE_MAP[productCode]} alt="Product Preview" className="product-image" />
+                  <div className="product-preview">
+                    <img src={PRODUCT_IMAGE_MAP[productCode]} alt="Product Preview" className="product-image" />
+                  </div>
                 )}
               </div>
               {canvas && (
@@ -353,26 +365,38 @@ const CaslaQuartzImageGenerator: React.FC = () => {
             </div>
             <div className="output-area">
               {error ? (
-                <div className="error-message">{error}</div>
+                <div className="error-message">
+                  <strong>Lỗi!</strong> {error}
+                </div>
               ) : loading ? (
                 <div className="loading-container">
-                  <div className="spinner" />
-                  <div className="progress-bar" style={{ width: `${progress}%` }} />
-                  <p>{quotes[currentQuote]}</p>
+                  <div className="spinner">
+                    <div></div>
+                  </div>
+                  <div className="progress-bar">
+                    <div className="progress-bar-fill" style={{ width: `${progress}%` }}></div>
+                  </div>
+                  <p className="loading-text quote-text">{quotes[currentQuote]}</p>
+                  <p className="loading-text estimated-time">Thời gian chờ dự kiến: 1-2 phút</p>
                 </div>
               ) : generatedImages.length > 0 ? (
                 <div className="generated-images-container">
                   {generatedImages.map((imageUrl, index) => (
                     <div key={index} className="generated-image-wrapper" onClick={() => openModal(imageUrl)}>
-                      <img src={imageUrl} alt={`Generated ${index}`} className="generated-image" />
-                      <a href={imageUrl} download={`generated_${index}.png`} onClick={e => e.stopPropagation()}>
-                        Tải về
+                      <img src={imageUrl} alt={`Generated ${index + 1}`} className="generated-image" />
+                      <a
+                        href={imageUrl}
+                        download={`generated_image_${index + 1}.png`}
+                        className="download-button"
+                        onClick={e => e.stopPropagation()}
+                      >
+                        Tải ảnh {index + 1} về máy
                       </a>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="output-placeholder">Ảnh sẽ hiển thị ở đây</div>
+                <div className="output-placeholder">Ảnh sẽ hiển thị ở đây sau khi tạo</div>
               )}
             </div>
           </div>
@@ -389,4 +413,4 @@ const CaslaQuartzImageGenerator: React.FC = () => {
   );
 };
 
-export default CaslaQuartzImageGenerator;
+export default App;
