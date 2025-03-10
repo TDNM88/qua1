@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import Footer from './components/Footer'; // Giả sử bạn có file này
-import UsageGuide from './components/UsageGuide'; // Giả sử bạn có file này
-import * as protobuf from 'protobufjs'; // Sử dụng ES Modules cho TypeScript
+import Footer from './components/Footer';
+import UsageGuide from './components/UsageGuide';
+import * as protobuf from 'protobufjs'; // Đảm bảo protobufjs được cài đặt
 
 // Định nghĩa schema protobuf
 const workflowSchema = `
@@ -26,7 +26,7 @@ type TabType = 'img2img' | 'text2img';
 type Product = string;
 
 const TENSOR_ART_API_URL = 'https://ap-east-1.tensorart.cloud/v1';
-const WORKFLOW_TEMPLATE_ID = '837405094118019506'; // Workflow template ID
+const WORKFLOW_TEMPLATE_ID = '837405094118019506';
 
 // Danh sách sản phẩm
 const PRODUCTS: Product[] = [
@@ -217,7 +217,7 @@ const CaslaQuartzImageGenerator: React.FC = () => {
           if (activeTab === 'img2img') {
             setImg2ImgSelectedProducts([product]);
           } else {
-            setText2Img_SelectedProducts(
+            setText2ImgSelectedProducts(
               selectedProducts.includes(product)
                 ? selectedProducts.filter((p) => p !== product)
                 : [...selectedProducts, product]
