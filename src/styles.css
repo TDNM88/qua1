@@ -234,6 +234,96 @@ textarea:focus {
   border-color: #007bff;
 }
 
+/* Skeleton loading */
+.skeleton-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+}
+
+.skeleton-item {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.skeleton-image {
+  width: 100%;
+  height: 200px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  border-radius: 8px;
+  animation: skeleton-loading 1.5s infinite;
+}
+
+.skeleton-text {
+  width: 60%;
+  height: 20px;
+  background: #f0f0f0;
+  border-radius: 4px;
+}
+
+@keyframes skeleton-loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Hiệu ứng hover cho ảnh */
+.generated-image-wrapper {
+  position: relative;
+  transition: transform 0.3s ease;
+}
+
+.generated-image-wrapper:hover {
+  transform: scale(1.03);
+}
+
+.generated-image-wrapper:hover::after {
+  content: "Nhấn để xem ảnh lớn";
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.7);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+/* Modal cho ảnh lớn */
+.image-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.image-modal img {
+  max-width: 90%;
+  max-height: 90%;
+  border-radius: 8px;
+}
+
+.close-modal {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  background: rgba(0,0,0,0.5);
+  padding: 8px 12px;
+  border-radius: 50%;
+}
+
 /* Responsive cho product-grid và product-button */
 @media (max-width: 768px) {
   .product-grid {
