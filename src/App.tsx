@@ -289,11 +289,11 @@ export default function CaslaQuartzImageGenerator() {
       const workflowData = {
         request_id: generateRequestId(),
         templateId: WORKFLOW_TEMPLATE_ID,
-        fields: {
-          "731": { image: imageResourceId },
-          "734": { text: position.toLowerCase() },
-          "735": { image: textureResourceId },
-        },
+        fields: [
+          { nodeId: "731", fieldName: "image", fieldValue: imageResourceId },
+          { nodeId: "734", fieldName: "text", fieldValue: position.toLowerCase() },
+          { nodeId: "735", fieldName: "image", fieldValue: textureResourceId },
+        ],
       };
 
       console.log('Sending workflowData:', JSON.stringify(workflowData, null, 2));
