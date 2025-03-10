@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Footer from './components/Footer';
 import UsageGuide from './components/UsageGuide';
-import { createHash } from 'crypto'; // Thêm crypto để tạo MD5
+import md5 from 'js-md5'; // Thay crypto bằng js-md5
 
 // Define types
 type TabType = 'img2img' | 'text2img';
@@ -101,7 +101,7 @@ const checkImageQuality = (file: File): Promise<{ isValid: boolean; message: str
 
 // Hàm tạo MD5
 const createMD5 = () => {
-  return createHash('md5').update(`${Date.now()}`).digest('hex');
+  return md5(`${Date.now()}`);
 };
 
 export default function CaslaQuartzImageGenerator() {
@@ -281,38 +281,34 @@ export default function CaslaQuartzImageGenerator() {
     setLoading(true);
     setError(null);
     try {
-      // Upload ảnh input từ người dùng
       const imageResourceId = await uploadImageToTensorArt(uploadedImage);
       const selectedProduct = img2imgSelectedProducts[0];
       const textureFilePath = PRODUCT_IMAGE_MAP[selectedProduct];
       if (!textureFilePath) throw new Error(`Không tìm thấy ảnh sản phẩm cho ${selectedProduct}`);
-      // Upload ảnh texture
       const textureResourceId = await uploadImageToTensorArt(textureFilePath);
 
-      // Sửa cấu trúc fields thành mảng trực tiếp
       const workflowData = {
         request_id: createMD5(),
         templateId: WORKFLOW_TEMPLATE_ID,
         fields: [
           {
-            nodeId: "731", // Node cho ảnh input
+            nodeId: "731",
             fieldName: "image",
-            fieldValue: imageResourceId, // Resource ID của ảnh input
+            fieldValue: imageResourceId,
           },
           {
-            nodeId: "734", // Node cho text (vị trí)
-            fieldName: "text", // ❗️Chuyển thành chữ thường
-            fieldValue: position.toLowerCase(), // Vị trí đặt đá
+            nodeId: "734",
+            fieldName: "text",
+            fieldValue: position.toLowerCase(),
           },
           {
-            nodeId: "735", // Node cho ảnh texture
+            nodeId: "735",
             fieldName: "image",
-            fieldValue: textureResourceId, // Resource ID của ảnh texture
+            fieldValue: textureResourceId,
           },
         ],
       };
 
-      // Gửi yêu cầu tạo job từ workflow template
       const response = await axios.post(
         `${TENSOR_ART_API_URL}/jobs/workflow/template`,
         workflowData,
@@ -390,7 +386,7 @@ export default function CaslaQuartzImageGenerator() {
       interval = setInterval(() => {
         setProgress((prev) => Math.min(prev + 1, 100));
         setCurrentQuote((prev) => (prev + 1) % quotes.length);
-      }, 2000); // Tăng lên 2000ms (2 giây) để tốc độ vừa phải
+      }, 2000);
     }
     return () => clearInterval(interval);
   }, [loading]);
@@ -554,7 +550,8 @@ export default function CaslaQuartzImageGenerator() {
                     <>
                       <img src={generatedImage} alt="Generated" className="generated-image" />
                       <a href={generatedImage} download="generated_image.png" className="download-button">
-                        Tải ảnh về máy</a>
+                        Tải ảnh về máy
+                      </a>
                     </>
                   );
                 }
