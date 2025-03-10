@@ -52,6 +52,27 @@ export default function CaslaQuartzImageGenerator() {
     Authorization: `Bearer ${process.env.REACT_APP_TENSOR_ART_API_KEY}`,
   };
 
+  // Danh sách sản phẩm
+  const PRODUCTS = [
+    "C1012 Glacier White", "C1026 Polar", "C3269 Ash Grey", "C3168 Silver Wave", "C1005 Milky White",
+    "C2103 Onyx Carrara", "C2104 Massa", "C3105 Casla Cloudy", "C3146 Casla Nova", "C2240 Marquin",
+    "C2262 Concrete (Honed)", "C3311 Calacatta Sky", "C3346 Massimo", "C4143 Mario", "C4145 Marina",
+    "C4202 Calacatta Gold", "C1205 Casla Everest", "C4211 Calacatta Supreme", "C4204 Calacatta Classic",
+    "C1102 Super White", "C4246 Casla Mystery", "C4345 Oro", "C4346 Luxe", "C4342 Casla Eternal",
+    "C4221 Athena", "C4255 Calacatta Extra"
+  ];
+
+  // Bản đồ ảnh sản phẩm
+  const PRODUCT_IMAGE_MAP: { [key: string]: string } = {
+    "C1012 Glacier White": `${process.env.PUBLIC_URL}/product_images/C1012.jpg`,
+    "C1026 Polar": `${process.env.PUBLIC_URL}/product_images/C1026.jpg`,
+    // ... các sản phẩm khác ...
+  };
+
+  const validateProductCode = (code: string) => {
+    return PRODUCTS.includes(code);
+  };
+
   // Khởi tạo canvas khi ảnh được tải lên
   useEffect(() => {
     if (uploadedImage) {
@@ -203,6 +224,10 @@ export default function CaslaQuartzImageGenerator() {
       setError('Vui lòng tải ảnh, vẽ mask, chọn/nhập vị trí đặt đá và nhập mã sản phẩm.');
       return;
     }
+    if (!validateProductCode(productCode)) {
+      setError('Mã sản phẩm không hợp lệ. Vui lòng nhập mã sản phẩm đúng.');
+      return;
+    }
     setGeneratedImages([]);
     setProgress(0);
     setCurrentQuote(0);
@@ -273,6 +298,10 @@ export default function CaslaQuartzImageGenerator() {
       setError('Vui lòng nhập mô tả và mã sản phẩm.');
       return;
     }
+    if (!validateProductCode(productCode)) {
+      setError('Mã sản phẩm không hợp lệ. Vui lòng nhập mã sản phẩm đúng.');
+      return;
+    }
     setGeneratedImages([]);
     setProgress(0);
     setCurrentQuote(0);
@@ -331,6 +360,8 @@ export default function CaslaQuartzImageGenerator() {
     }
     return () => clearInterval(interval);
   }, [loading]);
+
+  const selectedProductImage = PRODUCT_IMAGE_MAP[productCode] || '';
 
   return (
     <div className="app-container">
