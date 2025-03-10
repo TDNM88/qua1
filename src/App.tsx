@@ -5,6 +5,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import fabric from 'fabric';
 import Footer from './components/Footer';
 import UsageGuide from './components/UsageGuide';
+const [productCode, setProductCode] = useState<string>('');
 
 // Định nghĩa kiểu dữ liệu
 type TabType = 'img2img' | 'text2img';
@@ -198,8 +199,8 @@ export default function CaslaQuartzImageGenerator() {
   };
 
   const processImg2Img = async () => {
-    if (!uploadedImage || !maskImage || !position) {
-      setError('Vui lòng tải ảnh, vẽ mask và chọn/nhập vị trí đặt đá.');
+    if (!uploadedImage || !maskImage || !position || !productCode) {
+      setError('Vui lòng tải ảnh, vẽ mask, chọn/nhập vị trí đặt đá và nhập mã sản phẩm.');
       return;
     }
     setGeneratedImages([]);
@@ -235,6 +236,11 @@ export default function CaslaQuartzImageGenerator() {
               fieldName: "image",
               fieldValue: maskResourceId,
             },
+            {
+              nodeId: "736", // Node cho mã sản phẩm
+              fieldName: "Text",
+              fieldValue: productCode,
+            },
           ],
         },
       };
@@ -263,8 +269,8 @@ export default function CaslaQuartzImageGenerator() {
   };
 
   const processText2Img = async () => {
-    if (!prompt) {
-      setError('Vui lòng nhập mô tả.');
+    if (!prompt || !productCode) {
+      setError('Vui lòng nhập mô tả và mã sản phẩm.');
       return;
     }
     setGeneratedImages([]);
@@ -274,7 +280,7 @@ export default function CaslaQuartzImageGenerator() {
     setError(null);
     try {
       const [width, height] = text2ImgSize.split('x').map(Number);
-      const fullPrompt = `${prompt}, featuring quartz marble`;
+      const fullPrompt = `${prompt}, featuring quartz marble, product code: ${productCode}`;
       const txt2imgData = {
         request_id: createMD5(),
         stages: [
@@ -407,6 +413,17 @@ export default function CaslaQuartzImageGenerator() {
                       />
                     )}
                   </div>
+                  <div>
+                    <label htmlFor="productCode">Mã sản phẩm:</label>
+                    <input
+                      type="text"
+                      id="productCode"
+                      value={productCode}
+                      onChange={(e) => setProductCode(e.target.value)}
+                      placeholder="Nhập mã sản phẩm..."
+                      maxLength={20}
+                    />
+                  </div>
                   <button
                     className="generate-button"
                     onClick={saveMask}
@@ -441,6 +458,17 @@ export default function CaslaQuartzImageGenerator() {
                       <option value="768x512">768x512</option>
                       <option value="512x768">512x768</option>
                     </select>
+                  </div>
+                  <div>
+                    <label htmlFor="productCode">Mã sản phẩm:</label>
+                    <input
+                      type="text"
+                      id="productCode"
+                      value={productCode}
+                      onChange={(e) => setProductCode(e.target.value)}
+                      placeholder="Nhập mã sản phẩm..."
+                      maxLength={20}
+                    />
                   </div>
                   <button
                     className="generate-button"
