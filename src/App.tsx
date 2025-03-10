@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import fabric from 'fabric'; // Default import
+import * as fabric from 'fabric'; // Sử dụng named import để đảm bảo tất cả thành phần được import
 import Footer from './components/Footer';
 import UsageGuide from './components/UsageGuide';
 
@@ -85,42 +85,51 @@ const App: React.FC = () => {
   // Khởi tạo canvas khi ảnh được upload
   useEffect(() => {
     if (uploadedImage && canvasRef.current && !canvas) {
-      // Kiểm tra xem fabric có chứa Canvas không
-      if (!fabric || !fabric.Canvas) {
-        console.error('Fabric Canvas is not available. Check fabric import and version.');
-        return;
-      }
+      console.log('Initializing canvas with image:', uploadedImage);
 
+      // Khởi tạo canvas
       const newCanvas = new fabric.Canvas(canvasRef.current, {
-        isDrawingMode: true,
-        width: 800,
+        isDrawingMode: true, // Bật chế độ vẽ
+        width: 800, // Đặt kích thước cố định
         height: 600,
       });
 
+      // Thiết lập bút vẽ
       newCanvas.freeDrawingBrush = new fabric.PencilBrush(newCanvas);
       newCanvas.freeDrawingBrush.width = brushSize;
       newCanvas.freeDrawingBrush.color = brushColor;
 
+      // Load ảnh lên canvas
       fabric.Image.fromURL(uploadedImage, (img: fabric.Image) => {
         if (!img.width || !img.height) {
           console.error('Invalid image dimensions');
+          setError('Ảnh không hợp lệ. Vui lòng chọn ảnh khác.');
           return;
         }
+        console.log('Image loaded:', img.width, img.height);
+
+        // Điều chỉnh kích thước ảnh để vừa với canvas
         const scale = Math.min(1, 800 / img.width, 600 / img.height);
         img.scale(scale);
         newCanvas.setDimensions({
           width: img.width * scale,
           height: img.height * scale,
         });
-        newCanvas.setBackgroundImage(img, newCanvas.renderAll.bind(newCanvas), {
+
+        // Đặt ảnh làm background
+        newCanvas.setBackgroundImage(img, () => {
+          newCanvas.renderAll();
+          console.log('Canvas initialized with image');
+        }, {
           scaleX: scale,
           scaleY: scale,
+          crossOrigin: 'anonymous',
         });
-        console.log('Canvas initialized with image:', uploadedImage);
       }, { crossOrigin: 'anonymous' });
 
       setCanvas(newCanvas);
 
+      // Dọn dẹp khi component unmount
       return () => {
         newCanvas.dispose();
         setCanvas(null);
@@ -128,12 +137,13 @@ const App: React.FC = () => {
     }
   }, [uploadedImage]);
 
-  // Cập nhật brush settings
+  // Cập nhật brush settings khi brushSize hoặc brushColor thay đổi
   useEffect(() => {
     if (canvas) {
       canvas.freeDrawingBrush.width = brushSize;
       canvas.freeDrawingBrush.color = brushColor;
       canvas.renderAll();
+      console.log('Brush updated:', { brushSize, brushColor });
     }
   }, [brushSize, brushColor, canvas]);
 
