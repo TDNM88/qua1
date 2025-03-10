@@ -64,11 +64,10 @@ export default function CaslaQuartzImageGenerator() {
   const [img2imgSize, setImg2ImgSize] = useState<string>('1024x1024');
   const [text2ImgSize, setText2ImgSize] = useState<string>('1024x1024');
   const [prompt, setPrompt] = useState<string>('');
-  const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+  const [generatedImages, setGeneratedImages] = useState<string[]>([]); // Lưu trữ nhiều ảnh
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [img2imgSelectedProducts, setImg2ImgSelectedProducts] = useState<Product[]>([]);
-  const [text2imgSelectedProducts, setText2ImgSelectedProducts] = useState<Product[]>([]);
+  const [selectedProducts, setSelectedProducts] = useState<Product[]>([]); // Chọn nhiều sản phẩm
   const [progress, setProgress] = useState(0);
   const [currentQuote, setCurrentQuote] = useState(0);
 
@@ -136,33 +135,22 @@ export default function CaslaQuartzImageGenerator() {
     throw new Error('Job timed out after 3 minutes');
   };
 
-  const renderProducts = (selectedProducts: Product[], setSelectedProducts: (products: Product[]) => void) => {
+  const renderProducts = () => {
     return PRODUCTS.map((product) => (
       <button
         key={product}
         className={`product-button ${selectedProducts.includes(product) ? 'active' : ''}`}
         onClick={() => {
-          if (activeTab === 'img2img') {
-            setImg2ImgSelectedProducts([product]);
-          } else {
-            setText2ImgSelectedProducts(
-              selectedProducts.includes(product)
-                ? selectedProducts.filter((p) => p !== product)
-                : [...selectedProducts, product]
-            );
+          if (selectedProducts.includes(product)) {
+            setSelectedProducts(selectedProducts.filter((p) => p !== product)); // Bỏ chọn
+          } else if (selectedProducts.length < 10) {
+            setSelectedProducts([...selectedProducts, product]); // Thêm vào danh sách
           }
         }}
       >
         {product}
       </button>
     ));
-  };
-
-  const switchTab = (tab: TabType) => {
-    setActiveTab(tab);
-    setGeneratedImage(null);
-    setLoading(false);
-    setError(null);
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -177,143 +165,72 @@ export default function CaslaQuartzImageGenerator() {
     }
   };
 
-  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    const file = e.dataTransfer.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setUploadedImage(reader.result as string);
-        setError(null);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => e.preventDefault();
-
-  const handlePositionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value;
-    if (value === 'custom') {
-      setIsCustomPosition(true);
-      setPosition('');
-    } else {
-      setIsCustomPosition(false);
-      setPosition(value);
-    }
-  };
-
-  const handleCustomPositionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    if (value.length <= 15) {
-      setPosition(value);
-    }
-  };
-
   const processImg2Img = async () => {
-    if (!uploadedImage || img2imgSelectedProducts.length === 0 || !position) {
-      setError('Vui lòng tải ảnh, chọn một sản phẩm và chọn/nhập vị trí đặt đá.');
+    if (!uploadedImage || selectedProducts.length === 0 || !position) {
+      setError('Vui lòng tải ảnh, chọn ít nhất một sản phẩm và chọn/nhập vị trí đặt đá.');
       return;
     }
-    setGeneratedImage(null);
+    if (selectedProducts.length > 10) {
+      setError('Chỉ có thể chọn tối đa 10 sản phẩm.');
+      return;
+    }
+
+    setGeneratedImages([]);
     setProgress(0);
     setCurrentQuote(0);
     setLoading(true);
     setError(null);
+
     try {
       // Upload ảnh input từ người dùng
       const imageResourceId = await uploadImageToTensorArt(uploadedImage);
-      const selectedProduct = img2imgSelectedProducts[0];
-      const textureFilePath = PRODUCT_IMAGE_MAP[selectedProduct];
-      if (!textureFilePath) throw new Error(`Không tìm thấy ảnh sản phẩm cho ${selectedProduct}`);
-      // Upload ảnh texture
-      const textureResourceId = await uploadImageToTensorArt(textureFilePath);
 
-      // Chuẩn bị dữ liệu cho workflow template
-      const workflowData = {
-        request_id: createMD5(),
-        templateId: WORKFLOW_TEMPLATE_ID,
-        fields: {
-          fieldAttrs: [
-            {
-              nodeId: "731", // Node cho ảnh input
-              fieldName: "image",
-              fieldValue: imageResourceId, // Resource ID của ảnh input
-            },
-            {
-              nodeId: "734", // Node cho text (vị trí)
-              fieldName: "Text", // Lưu ý: "Text" với chữ T viết hoa
-              fieldValue: position.toLowerCase(), // Vị trí đặt đá
-            },
-            {
-              nodeId: "735", // Node cho ảnh texture
-              fieldName: "image",
-              fieldValue: textureResourceId, // Resource ID của ảnh texture
-            },
-          ],
-        },
-      };
+      // Xử lý từng sản phẩm đã chọn
+      const promises = selectedProducts.map(async (product) => {
+        const textureFilePath = PRODUCT_IMAGE_MAP[product];
+        if (!textureFilePath) throw new Error(`Không tìm thấy ảnh sản phẩm cho ${product}`);
 
-      // Gửi yêu cầu tạo job từ workflow template
-      const response = await axios.post(
-        `${TENSOR_ART_API_URL}/jobs/workflow/template`,
-        workflowData,
-        { headers }
-      );
-      const jobId = response.data.job.id;
-      const imageUrl = await pollJobStatus(jobId);
-      setGeneratedImage(imageUrl);
-    } catch (err: unknown) {
-      if (axios.isAxiosError(err) && err.response) {
-        setError(`Lỗi từ server: ${err.response.data.message || err.message}`);
-      } else {
-        setError(`Có lỗi xảy ra khi tạo ảnh: ${(err as Error).message}`);
-      }
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+        // Upload ảnh texture
+        const textureResourceId = await uploadImageToTensorArt(textureFilePath);
 
-  const processText2Img = async () => {
-    if (!prompt || text2imgSelectedProducts.length === 0) {
-      setError('Vui lòng nhập mô tả và chọn ít nhất một sản phẩm.');
-      return;
-    }
-    setGeneratedImage(null);
-    setProgress(0);
-    setCurrentQuote(0);
-    setLoading(true);
-    setError(null);
-    try {
-      const [width, height] = text2ImgSize.split('x').map(Number);
-      const fullPrompt = `${prompt}, featuring ${text2imgSelectedProducts.join(', ')} quartz marble`;
-      const txt2imgData = {
-        request_id: createMD5(),
-        stages: [
-          { type: 'INPUT_INITIALIZE', inputInitialize: { seed: -1, count: 1 } },
-          {
-            type: 'DIFFUSION',
-            diffusion: {
-              width,
-              height,
-              prompts: [{ text: fullPrompt }],
-              negativePrompts: [{ text: ' ' }],
-              sdModel: '779398605850080514',
-              sdVae: 'ae.sft',
-              sampler: 'Euler a',
-              steps: 30,
-              cfgScale: 8,
-              clipSkip: 1,
-              etaNoiseSeedDelta: 31337,
-            },
+        // Chuẩn bị dữ liệu cho workflow template
+        const workflowData = {
+          request_id: createMD5(),
+          templateId: WORKFLOW_TEMPLATE_ID,
+          fields: {
+            fieldAttrs: [
+              {
+                nodeId: "731", // Node cho ảnh input
+                fieldName: "image",
+                fieldValue: imageResourceId, // Resource ID của ảnh input
+              },
+              {
+                nodeId: "734", // Node cho text (vị trí)
+                fieldName: "Text", // Lưu ý: "Text" với chữ T viết hoa
+                fieldValue: position.toLowerCase(), // Vị trí đặt đá
+              },
+              {
+                nodeId: "735", // Node cho ảnh texture
+                fieldName: "image",
+                fieldValue: textureResourceId, // Resource ID của ảnh texture
+              },
+            ],
           },
-        ],
-      };
-      const response = await axios.post(`${TENSOR_ART_API_URL}/jobs`, txt2imgData, { headers });
-      const jobId = response.data.job.id;
-      const imageUrl = await pollJobStatus(jobId);
-      setGeneratedImage(imageUrl);
+        };
+
+        // Gửi yêu cầu tạo job từ workflow template
+        const response = await axios.post(
+          `${TENSOR_ART_API_URL}/jobs/workflow/template`,
+          workflowData,
+          { headers }
+        );
+        const jobId = response.data.job.id;
+        return pollJobStatus(jobId);
+      });
+
+      // Chờ tất cả các yêu cầu hoàn thành
+      const imageUrls = await Promise.all(promises);
+      setGeneratedImages(imageUrls);
     } catch (err: unknown) {
       if (axios.isAxiosError(err) && err.response) {
         setError(`Lỗi từ server: ${err.response.data.message || err.message}`);
@@ -349,11 +266,7 @@ export default function CaslaQuartzImageGenerator() {
             <UsageGuide />
             <div className="tab-buttons">
               <button
-                className={`tab-button ${activeTab === 'img2img' ? 'active' : ''}`}
-                onClick={() => switchTab('img2img')}
-              >
-                Tạo Ảnh CaslaQuartz Cùng Công Trình Có Sẵn
-              </button>
+                className={`tab-button ${activeTab ===</button>
               <button
                 className={`tab-button ${activeTab === 'text2img' ? 'active' : ''}`}
                 onClick={() => switchTab('text2img')}
@@ -402,7 +315,7 @@ export default function CaslaQuartzImageGenerator() {
                         value={position}
                         onChange={handleCustomPositionChange}
                         placeholder="Nhập vị trí tùy chỉnh..."
-                        maxLength={30}
+                        maxLength={15}
                         className="custom-position-input"
                       />
                     )}
@@ -416,15 +329,15 @@ export default function CaslaQuartzImageGenerator() {
                     </select>
                   </div>
                   <div>
-                    <label>Chọn một sản phẩm:</label>
+                    <label>Chọn sản phẩm (tối đa 10):</label>
                     <div className="product-grid">
-                      {renderProducts(img2imgSelectedProducts, setImg2ImgSelectedProducts)}
+                      {renderProducts()}
                     </div>
                   </div>
                   <button
                     className="generate-button"
                     onClick={processImg2Img}
-                    disabled={loading || !uploadedImage || img2imgSelectedProducts.length === 0}
+                    disabled={loading || !uploadedImage || selectedProducts.length === 0}
                   >
                     {loading ? 'Đang xử lý...' : 'Tạo ảnh'}
                   </button>
@@ -450,15 +363,15 @@ export default function CaslaQuartzImageGenerator() {
                     </select>
                   </div>
                   <div>
-                    <label>Chọn sản phẩm:</label>
+                    <label>Chọn sản phẩm (tối đa 10):</label>
                     <div className="product-grid">
-                      {renderProducts(text2imgSelectedProducts, setText2ImgSelectedProducts)}
+                      {renderProducts()}
                     </div>
                   </div>
                   <button
                     className="generate-button"
                     onClick={processText2Img}
-                    disabled={loading || !prompt || text2imgSelectedProducts.length === 0}
+                    disabled={loading || !prompt || selectedProducts.length === 0}
                   >
                     {loading ? 'Đang xử lý...' : 'Tạo ảnh'}
                   </button>
@@ -491,14 +404,18 @@ export default function CaslaQuartzImageGenerator() {
                     </div>
                   );
                 }
-                if (generatedImage) {
+                if (generatedImages.length > 0) {
                   return (
-                    <>
-                      <img src={generatedImage} alt="Generated" className="generated-image" />
-                      <a href={generatedImage} download="generated_image.png" className="download-button">
-                        Tải ảnh về máy
-                      </a>
-                    </>
+                    <div className="generated-images">
+                      {generatedImages.map((imageUrl, index) => (
+                        <div key={index} className="generated-image-container">
+                          <img src={imageUrl} alt={`Generated ${index + 1}`} className="generated-image" />
+                          <a href={imageUrl} download={`generated_image_${index + 1}.png`} className="download-button">
+                            Tải ảnh về máy
+                          </a>
+                        </div>
+                      ))}
+                    </div>
                   );
                 }
                 return <div className="output-placeholder">Ảnh sẽ hiển thị ở đây sau khi tạo</div>;
