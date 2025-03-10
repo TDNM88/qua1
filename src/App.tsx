@@ -2,126 +2,61 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Footer from './components/Footer';
 import UsageGuide from './components/UsageGuide';
-import * as protobuf from 'protobufjs';
 
-// Định nghĩa schema protobuf
-const workflowSchema = `
-  message WorkflowRequest {
-    string request_id = 1;
-    string templateId = 2;
-    repeated Field fields = 3;
-  }
-  message Field {
-    string nodeId = 1;
-    string fieldName = 2;
-    string fieldValue = 3;
-  }
-`;
-
-const root = protobuf.parse(workflowSchema).root;
-const WorkflowRequest = root.lookupType('WorkflowRequest');
-
-// Định nghĩa các type
+// Định nghĩa kiểu dữ liệu
 type TabType = 'img2img' | 'text2img';
 type Product = string;
 
-const TENSOR_ART_API_URL = 'https://ap-east-1.tensorart.cloud/v1';
-const WORKFLOW_TEMPLATE_ID = '837405094118019506';
+// Cấu hình API TensorArt
+const TENSOR_ART_API_URL = "https://ap-east-1.tensorart.cloud/v1";
+const WORKFLOW_TEMPLATE_ID = "837405094118019506"; // Workflow template ID
 
 // Danh sách sản phẩm
-const PRODUCTS: Product[] = [
-  'C1012 Glacier White', 'C1026 Polar', 'C3269 Ash Grey', 'C3168 Silver Wave', 'C1005 Milky White',
-  'C2103 Onyx Carrara', 'C2104 Massa', 'C3105 Casla Cloudy', 'C3146 Casla Nova', 'C2240 Marquin',
-  'C2262 Concrete (Honed)', 'C3311 Calacatta Sky', 'C3346 Massimo', 'C4143 Mario', 'C4145 Marina',
-  'C4202 Calacatta Gold', 'C1205 Casla Everest', 'C4211 Calacatta Supreme', 'C4204 Calacatta Classic',
-  'C1102 Super White', 'C4246 Casla Mystery', 'C4345 Oro', 'C4346 Luxe', 'C4342 Casla Eternal',
-  'C4221 Athena', 'C4255 Calacatta Extra',
+const PRODUCTS = [
+  "C1012 Glacier White", "C1026 Polar", "C3269 Ash Grey", "C3168 Silver Wave", "C1005 Milky White",
+  "C2103 Onyx Carrara", "C2104 Massa", "C3105 Casla Cloudy", "C3146 Casla Nova", "C2240 Marquin",
+  "C2262 Concrete (Honed)", "C3311 Calacatta Sky", "C3346 Massimo", "C4143 Mario", "C4145 Marina",
+  "C4202 Calacatta Gold", "C1205 Casla Everest", "C4211 Calacatta Supreme", "C4204 Calacatta Classic",
+  "C1102 Super White", "C4246 Casla Mystery", "C4345 Oro", "C4346 Luxe", "C4342 Casla Eternal",
+  "C4221 Athena", "C4255 Calacatta Extra"
 ];
 
 // Bản đồ ảnh sản phẩm
 const PRODUCT_IMAGE_MAP: { [key: string]: string } = {
-  'C1012 Glacier White': `${process.env.PUBLIC_URL}/product_images/C1012.jpg`,
-  'C1026 Polar': `${process.env.PUBLIC_URL}/product_images/C1026.jpg`,
-  'C3269 Ash Grey': `${process.env.PUBLIC_URL}/product_images/C3269.jpg`,
-  'C3168 Silver Wave': `${process.env.PUBLIC_URL}/product_images/C3168.jpg`,
-  'C1005 Milky White': `${process.env.PUBLIC_URL}/product_images/C1005.jpg`,
-  'C2103 Onyx Carrara': `${process.env.PUBLIC_URL}/product_images/C2103.jpg`,
-  'C2104 Massa': `${process.env.PUBLIC_URL}/product_images/C2104.jpg`,
-  'C3105 Casla Cloudy': `${process.env.PUBLIC_URL}/product_images/C3105.jpg`,
-  'C3146 Casla Nova': `${process.env.PUBLIC_URL}/product_images/C3146.jpg`,
-  'C2240 Marquin': `${process.env.PUBLIC_URL}/product_images/C2240.jpg`,
-  'C2262 Concrete (Honed)': `${process.env.PUBLIC_URL}/product_images/C2262.jpg`,
-  'C3311 Calacatta Sky': `${process.env.PUBLIC_URL}/product_images/C3311.jpg`,
-  'C3346 Massimo': `${process.env.PUBLIC_URL}/product_images/C3346.jpg`,
-  'C4143 Mario': `${process.env.PUBLIC_URL}/product_images/C4143.jpg`,
-  'C4145 Marina': `${process.env.PUBLIC_URL}/product_images/C4145.jpg`,
-  'C4202 Calacatta Gold': `${process.env.PUBLIC_URL}/product_images/C4202.jpg`,
-  'C1205 Casla Everest': `${process.env.PUBLIC_URL}/product_images/C1205.jpg`,
-  'C4211 Calacatta Supreme': `${process.env.PUBLIC_URL}/product_images/C4211.jpg`,
-  'C4204 Calacatta Classic': `${process.env.PUBLIC_URL}/product_images/C4204.jpg`,
-  'C1102 Super White': `${process.env.PUBLIC_URL}/product_images/C1102.jpg`,
-  'C4246 Casla Mystery': `${process.env.PUBLIC_URL}/product_images/C4246.jpg`,
-  'C4345 Oro': `${process.env.PUBLIC_URL}/product_images/C4345.jpg`,
-  'C4346 Luxe': `${process.env.PUBLIC_URL}/product_images/C4346.jpg`,
-  'C4342 Casla Eternal': `${process.env.PUBLIC_URL}/product_images/C4342.jpg`,
-  'C4221 Athena': `${process.env.PUBLIC_URL}/product_images/C4221.jpg`,
-  'C4255 Calacatta Extra': `${process.env.PUBLIC_URL}/product_images/C4255.jpg`,
+  "C1012 Glacier White": `${process.env.PUBLIC_URL}/product_images/C1012.jpg`,
+  "C1026 Polar": `${process.env.PUBLIC_URL}/product_images/C1026.jpg`,
+  "C3269 Ash Grey": `${process.env.PUBLIC_URL}/product_images/C3269.jpg`,
+  "C3168 Silver Wave": `${process.env.PUBLIC_URL}/product_images/C3168.jpg`,
+  "C1005 Milky White": `${process.env.PUBLIC_URL}/product_images/C1005.jpg`,
+  "C2103 Onyx Carrara": `${process.env.PUBLIC_URL}/product_images/C2103.jpg`,
+  "C2104 Massa": `${process.env.PUBLIC_URL}/product_images/C2104.jpg`,
+  "C3105 Casla Cloudy": `${process.env.PUBLIC_URL}/product_images/C3105.jpg`,
+  "C3146 Casla Nova": `${process.env.PUBLIC_URL}/product_images/C3146.jpg`,
+  "C2240 Marquin": `${process.env.PUBLIC_URL}/product_images/C2240.jpg`,
+  "C2262 Concrete (Honed)": `${process.env.PUBLIC_URL}/product_images/C2262.jpg`,
+  "C3311 Calacatta Sky": `${process.env.PUBLIC_URL}/product_images/C3311.jpg`,
+  "C3346 Massimo": `${process.env.PUBLIC_URL}/product_images/C3346.jpg`,
+  "C4143 Mario": `${process.env.PUBLIC_URL}/product_images/C4143.jpg`,
+  "C4145 Marina": `${process.env.PUBLIC_URL}/product_images/C4145.jpg`,
+  "C4202 Calacatta Gold": `${process.env.PUBLIC_URL}/product_images/C4202.jpg`,
+  "C1205 Casla Everest": `${process.env.PUBLIC_URL}/product_images/C1205.jpg`,
+  "C4211 Calacatta Supreme": `${process.env.PUBLIC_URL}/product_images/C4211.jpg`,
+  "C4204 Calacatta Classic": `${process.env.PUBLIC_URL}/product_images/C4204.jpg`,
+  "C1102 Super White": `${process.env.PUBLIC_URL}/product_images/C1102.jpg`,
+  "C4246 Casla Mystery": `${process.env.PUBLIC_URL}/product_images/C4246.jpg`,
+  "C4345 Oro": `${process.env.PUBLIC_URL}/product_images/C4345.jpg`,
+  "C4346 Luxe": `${process.env.PUBLIC_URL}/product_images/C4346.jpg`,
+  "C4342 Casla Eternal": `${process.env.PUBLIC_URL}/product_images/C4342.jpg`,
+  "C4221 Athena": `${process.env.PUBLIC_URL}/product_images/C4221.jpg`,
+  "C4255 Calacatta Extra": `${process.env.PUBLIC_URL}/product_images/C4255.jpg`,
 };
 
-// Hàm kiểm tra chất lượng ảnh
-const checkImageQuality = (file: File): Promise<{ isValid: boolean; message: string }> => {
-  return new Promise((resolve) => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.onload = () => {
-      const width = img.width;
-      const height = img.height;
-      const fileSizeKB = file.size / 1024;
-      const format = file.type.split('/')[1].toLowerCase();
-      const minWidth = 800;
-      const minHeight = 600;
-      const maxFileSizeKB = 5000;
-      const allowedFormats = ['jpg', 'jpeg', 'png'];
-      if (width < minWidth || height < minHeight) {
-        resolve({
-          isValid: false,
-          message: `Độ phân giải quá thấp (${width}x${height}). Yêu cầu tối thiểu: ${minWidth}x${minHeight}.`,
-        });
-      } else if (!allowedFormats.includes(format)) {
-        resolve({
-          isValid: false,
-          message: 'Định dạng không được hỗ trợ. Chỉ chấp nhận: JPG, PNG.',
-        });
-      } else if (fileSizeKB > maxFileSizeKB) {
-        resolve({
-          isValid: false,
-          message: `Kích thước file quá lớn (${fileSizeKB.toFixed(2)}KB). Tối đa: ${maxFileSizeKB}KB.`,
-        });
-      } else {
-        resolve({
-          isValid: true,
-          message: 'Ảnh đạt yêu cầu.',
-        });
-      }
-      URL.revokeObjectURL(url);
-    };
-    img.onerror = () => {
-      resolve({
-        isValid: false,
-        message: 'Không thể tải ảnh. Vui lòng thử lại.',
-      });
-      URL.revokeObjectURL(url);
-    };
-    img.src = url;
-  });
+// Hàm tạo request_id ngẫu nhiên
+const createMD5 = () => {
+  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 };
 
-// Hàm tạo request_id không trùng lặp
-const generateRequestId = (): string => {
-  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-};
-
-const CaslaQuartzImageGenerator: React.FC = () => {
+export default function CaslaQuartzImageGenerator() {
   const [activeTab, setActiveTab] = useState<TabType>('img2img');
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [position, setPosition] = useState<string>('floor');
@@ -134,20 +69,20 @@ const CaslaQuartzImageGenerator: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [img2imgSelectedProducts, setImg2ImgSelectedProducts] = useState<Product[]>([]);
   const [text2imgSelectedProducts, setText2ImgSelectedProducts] = useState<Product[]>([]);
-  const [progress, setProgress] = useState<number>(0);
-  const [currentQuote, setCurrentQuote] = useState<number>(0);
+  const [progress, setProgress] = useState(0);
+  const [currentQuote, setCurrentQuote] = useState(0);
 
-  const quotes: string[] = [
-    'Đá thạch anh mang lại sự sang trọng và bền bỉ cho mọi không gian.',
-    'Thiết kế đẹp bắt đầu từ những chi tiết nhỏ nhất.',
-    'CaslaQuartz - Sự lựa chọn hoàn hảo cho ngôi nhà hiện đại.',
-    'Mỗi viên đá là một câu chuyện về nghệ thuật và công nghệ.',
-    'Mẹo: Phối màu sáng với CaslaQuartz để làm nổi không gian.',
-    'Mẹo: Kết hợp nhiều mẫu đá để tạo điểm nhấn.',
+  const quotes = [
+    "Đá thạch anh mang lại sự sang trọng và bền bỉ cho mọi không gian.",
+    "Thiết kế đẹp bắt đầu từ những chi tiết nhỏ nhất.",
+    "CaslaQuartz - Sự lựa chọn hoàn hảo cho ngôi nhà hiện đại.",
+    "Mỗi viên đá là một câu chuyện về nghệ thuật và công nghệ.",
+    "Mẹo: Phối màu sáng với CaslaQuartz để làm nổi không gian.",
+    "Mẹo: Kết hợp nhiều mẫu đá để tạo điểm nhấn.",
   ];
 
   const headers = {
-    'Content-Type': 'application/x-protobuf',
+    'Content-Type': 'application/json',
     Accept: 'application/json',
     Authorization: `Bearer ${process.env.REACT_APP_TENSOR_ART_API_KEY}`,
   };
@@ -158,11 +93,7 @@ const CaslaQuartzImageGenerator: React.FC = () => {
     try {
       const response = await fetch(url, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-          Authorization: `Bearer ${process.env.REACT_APP_TENSOR_ART_API_KEY}`,
-        },
+        headers,
         body: JSON.stringify(payload),
       });
       const responseText = await response.text();
@@ -170,9 +101,9 @@ const CaslaQuartzImageGenerator: React.FC = () => {
         throw new Error(`POST failed: ${response.status} - ${responseText}`);
       }
       const resourceResponse = JSON.parse(responseText);
-      const putUrl: string = resourceResponse.putUrl;
-      const resourceId: string = resourceResponse.resourceId;
-      const putHeaders: Record<string, string> = resourceResponse.headers || { 'Content-Type': 'image/jpeg' };
+      const putUrl = resourceResponse.putUrl as string;
+      const resourceId = resourceResponse.resourceId as string;
+      const putHeaders = (resourceResponse.headers as Record<string, string>) || { 'Content-Type': 'image/jpeg' };
       if (!putUrl || !resourceId) {
         throw new Error(`Invalid response: ${JSON.stringify(resourceResponse)}`);
       }
@@ -205,10 +136,7 @@ const CaslaQuartzImageGenerator: React.FC = () => {
     throw new Error('Job timed out after 3 minutes');
   };
 
-  const renderProducts = (
-    selectedProducts: Product[],
-    setSelectedProducts: (products: Product[]) => void
-  ) => {
+  const renderProducts = (selectedProducts: Product[], setSelectedProducts: (products: Product[]) => void) => {
     return PRODUCTS.map((product) => (
       <button
         key={product}
@@ -240,18 +168,12 @@ const CaslaQuartzImageGenerator: React.FC = () => {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const { isValid, message } = await checkImageQuality(file);
-      if (isValid) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setUploadedImage(reader.result as string);
-          setError(null);
-        };
-        reader.readAsDataURL(file);
-      } else {
-        setUploadedImage(null);
-        setError(message);
-      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setUploadedImage(reader.result as string);
+        setError(null);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -259,18 +181,12 @@ const CaslaQuartzImageGenerator: React.FC = () => {
     e.preventDefault();
     const file = e.dataTransfer.files[0];
     if (file) {
-      const { isValid, message } = await checkImageQuality(file);
-      if (isValid) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setUploadedImage(reader.result as string);
-          setError(null);
-        };
-        reader.readAsDataURL(file);
-      } else {
-        setUploadedImage(null);
-        setError(message);
-      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setUploadedImage(reader.result as string);
+        setError(null);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -305,37 +221,50 @@ const CaslaQuartzImageGenerator: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
+      // Upload ảnh input từ người dùng
       const imageResourceId = await uploadImageToTensorArt(uploadedImage);
       const selectedProduct = img2imgSelectedProducts[0];
       const textureFilePath = PRODUCT_IMAGE_MAP[selectedProduct];
       if (!textureFilePath) throw new Error(`Không tìm thấy ảnh sản phẩm cho ${selectedProduct}`);
+      // Upload ảnh texture
       const textureResourceId = await uploadImageToTensorArt(textureFilePath);
 
-      const message = WorkflowRequest.create({
-        request_id: generateRequestId(),
+      // Chuẩn bị dữ liệu cho workflow template
+      const workflowData = {
+        request_id: createMD5(),
         templateId: WORKFLOW_TEMPLATE_ID,
-        fields: [
-          { nodeId: '731', fieldName: 'image', fieldValue: imageResourceId },
-          { nodeId: '734', fieldName: 'text', fieldValue: position.toLowerCase() },
-          { nodeId: '735', fieldName: 'image', fieldValue: textureResourceId },
-        ],
-      });
+        fields: {
+          fieldAttrs: [
+            {
+              nodeId: "731", // Node cho ảnh input
+              fieldName: "image",
+              fieldValue: imageResourceId, // Resource ID của ảnh input
+            },
+            {
+              nodeId: "734", // Node cho text (vị trí)
+              fieldName: "Text", // Lưu ý: "Text" với chữ T viết hoa
+              fieldValue: position.toLowerCase(), // Vị trí đặt đá
+            },
+            {
+              nodeId: "735", // Node cho ảnh texture
+              fieldName: "image",
+              fieldValue: textureResourceId, // Resource ID của ảnh texture
+            },
+          ],
+        },
+      };
 
-      const buffer = WorkflowRequest.encode(message).finish();
-
-      console.log('Sending protobuf buffer:', buffer);
-
-      const response = await axios.post(`${TENSOR_ART_API_URL}/jobs/workflow/template`, buffer, {
-        headers,
-        responseType: 'json',
-      });
-
-      const jobId: string = response.data.job.id;
+      // Gửi yêu cầu tạo job từ workflow template
+      const response = await axios.post(
+        `${TENSOR_ART_API_URL}/jobs/workflow/template`,
+        workflowData,
+        { headers }
+      );
+      const jobId = response.data.job.id;
       const imageUrl = await pollJobStatus(jobId);
       setGeneratedImage(imageUrl);
     } catch (err: unknown) {
       if (axios.isAxiosError(err) && err.response) {
-        console.log('Server response:', err.response.data);
         setError(`Lỗi từ server: ${err.response.data.message || err.message}`);
       } else {
         setError(`Có lỗi xảy ra khi tạo ảnh: ${(err as Error).message}`);
@@ -360,7 +289,7 @@ const CaslaQuartzImageGenerator: React.FC = () => {
       const [width, height] = text2ImgSize.split('x').map(Number);
       const fullPrompt = `${prompt}, featuring ${text2imgSelectedProducts.join(', ')} quartz marble`;
       const txt2imgData = {
-        request_id: generateRequestId(),
+        request_id: createMD5(),
         stages: [
           { type: 'INPUT_INITIALIZE', inputInitialize: { seed: -1, count: 1 } },
           {
@@ -381,22 +310,12 @@ const CaslaQuartzImageGenerator: React.FC = () => {
           },
         ],
       };
-
-      console.log('Sending txt2imgData:', JSON.stringify(txt2imgData, null, 2));
-
-      const response = await axios.post(`${TENSOR_ART_API_URL}/jobs`, txt2imgData, {
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-          Authorization: `Bearer ${process.env.REACT_APP_TENSOR_ART_API_KEY}`,
-        },
-      });
-      const jobId: string = response.data.job.id;
+      const response = await axios.post(`${TENSOR_ART_API_URL}/jobs`, txt2imgData, { headers });
+      const jobId = response.data.job.id;
       const imageUrl = await pollJobStatus(jobId);
       setGeneratedImage(imageUrl);
     } catch (err: unknown) {
       if (axios.isAxiosError(err) && err.response) {
-        console.log('Server response:', err.response.data);
         setError(`Lỗi từ server: ${err.response.data.message || err.message}`);
       } else {
         setError(`Có lỗi xảy ra khi tạo ảnh: ${(err as Error).message}`);
@@ -413,7 +332,7 @@ const CaslaQuartzImageGenerator: React.FC = () => {
       interval = setInterval(() => {
         setProgress((prev) => Math.min(prev + 1, 100));
         setCurrentQuote((prev) => (prev + 1) % quotes.length);
-      }, 2000);
+      }, 2000); // Tăng lên 2000ms (2 giây) để tốc độ vừa phải
     }
     return () => clearInterval(interval);
   }, [loading]);
@@ -453,21 +372,10 @@ const CaslaQuartzImageGenerator: React.FC = () => {
                     ) : (
                       <div onClick={() => document.getElementById('image-upload')?.click()}>
                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M7 16V4m0 0L3 8m4-4l4 4m6 8v4m0 0l-4-4m4 4l4-4"
-                          />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 8v4m0 0l-4-4m4 4l4-4" />
                         </svg>
                         <p>Kéo thả hoặc nhấn để tải ảnh</p>
-                        <input
-                          type="file"
-                          id="image-upload"
-                          className="hidden"
-                          accept="image/*"
-                          onChange={handleImageUpload}
-                        />
+                        <input type="file" id="image-upload" className="hidden" accept="image/*" onChange={handleImageUpload} />
                       </div>
                     )}
                   </div>
@@ -501,11 +409,7 @@ const CaslaQuartzImageGenerator: React.FC = () => {
                   </div>
                   <div>
                     <label htmlFor="size-img2img">Kích thước:</label>
-                    <select
-                      id="size-img2img"
-                      value={img2imgSize}
-                      onChange={(e) => setImg2ImgSize(e.target.value)}
-                    >
+                    <select id="size-img2img" value={img2imgSize} onChange={(e) => setImg2ImgSize(e.target.value)}>
                       <option value="1152x768">1152x768</option>
                       <option value="1024x1024">1024x1024</option>
                       <option value="768x1152">768x1152</option>
@@ -539,11 +443,7 @@ const CaslaQuartzImageGenerator: React.FC = () => {
                   </div>
                   <div>
                     <label htmlFor="size-text2img">Kích thước:</label>
-                    <select
-                      id="size-text2img"
-                      value={text2ImgSize}
-                      onChange={(e) => setText2ImgSize(e.target.value)}
-                    >
+                    <select id="size-text2img" value={text2ImgSize} onChange={(e) => setText2ImgSize(e.target.value)}>
                       <option value="1024x1024">1024x1024</option>
                       <option value="768x512">768x512</option>
                       <option value="512x768">512x768</option>
@@ -566,31 +466,43 @@ const CaslaQuartzImageGenerator: React.FC = () => {
               )}
             </div>
             <div className="output-area">
-              {error ? (
-                <div className="error-message">
-                  <strong>Lỗi!</strong> <span>{error}</span>
-                </div>
-              ) : loading ? (
-                <div className="loading-container">
-                  <div className="spinner">
-                    <div></div>
-                  </div>
-                  <div className="progress-bar">
-                    <div className="progress-bar-fill" style={{ width: `${progress}%` }}></div>
-                  </div>
-                  <p className="loading-text quote-text">{quotes[currentQuote]}</p>
-                  <p className="loading-text estimated-time">Thời gian chờ dự kiến: 1-2 phút</p>
-                </div>
-              ) : generatedImage ? (
-                <>
-                  <img src={generatedImage} alt="Generated" className="generated-image" />
-                  <a href={generatedImage} download="generated_image.png" className="download-button">
-                    Tải ảnh về máy
-                  </a>
-                </>
-              ) : (
-                <div className="output-placeholder">Ảnh sẽ hiển thị ở đây sau khi tạo</div>
-              )}
+              {(() => {
+                if (error) {
+                  return (
+                    <div className="error-message">
+                      <strong>Lỗi!</strong> <span>{error}</span>
+                    </div>
+                  );
+                }
+                if (loading) {
+                  return (
+                    <div className="loading-container">
+                      <div className="spinner">
+                        <div></div>
+                      </div>
+                      <div className="progress-bar">
+                        <div
+                          className="progress-bar-fill"
+                          style={{ width: `${progress}%` }}
+                        ></div>
+                      </div>
+                      <p className="loading-text quote-text">{quotes[currentQuote]}</p>
+                      <p className="loading-text estimated-time">Thời gian chờ dự kiến: 1-2 phút</p>
+                    </div>
+                  );
+                }
+                if (generatedImage) {
+                  return (
+                    <>
+                      <img src={generatedImage} alt="Generated" className="generated-image" />
+                      <a href={generatedImage} download="generated_image.png" className="download-button">
+                        Tải ảnh về máy
+                      </a>
+                    </>
+                  );
+                }
+                return <div className="output-placeholder">Ảnh sẽ hiển thị ở đây sau khi tạo</div>;
+              })()}
             </div>
           </div>
           <Footer />
@@ -598,6 +510,4 @@ const CaslaQuartzImageGenerator: React.FC = () => {
       </div>
     </div>
   );
-};
-
-export default CaslaQuartzImageGenerator;
+}
