@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import fabric from 'fabric';
+import { fabric } from 'fabric'; // Sửa import ở đây
 import Footer from './components/Footer';
 import UsageGuide from './components/UsageGuide';
 
@@ -64,7 +64,7 @@ export default function CaslaQuartzImageGenerator() {
   const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
   const [maskImage, setMaskImage] = useState<string | null>(null);
   const [brushSize, setBrushSize] = useState<number>(10);
-  const [brushColor, setBrushColor] = useState<string>('rgba(255, 0, 0, 0.5)');
+  const [brushColor, setBrushColor] = useState<string>('#ff0000'); // Sửa màu brush ở đây
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const quotes = [
