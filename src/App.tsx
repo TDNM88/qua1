@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import Footer from './components/Footer';
 import UsageGuide from './components/UsageGuide';
 
@@ -64,13 +66,15 @@ export default function CaslaQuartzImageGenerator() {
   const [img2imgSize, setImg2ImgSize] = useState<string>('1024x1024');
   const [text2ImgSize, setText2ImgSize] = useState<string>('1024x1024');
   const [prompt, setPrompt] = useState<string>('');
-  const [generatedImages, setGeneratedImages] = useState<string[]>([]); // Thay đổi thành mảng
+  const [generatedImages, setGeneratedImages] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [img2imgSelectedProducts, setImg2ImgSelectedProducts] = useState<Product[]>([]);
   const [text2imgSelectedProducts, setText2ImgSelectedProducts] = useState<Product[]>([]);
   const [progress, setProgress] = useState(0);
   const [currentQuote, setCurrentQuote] = useState(0);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalImage, setModalImage] = useState('');
 
   const quotes = [
     "Đá thạch anh mang lại sự sang trọng và bền bỉ cho mọi không gian.",
@@ -85,6 +89,24 @@ export default function CaslaQuartzImageGenerator() {
     'Content-Type': 'application/json',
     Accept: 'application/json',
     Authorization: `Bearer ${process.env.REACT_APP_TENSOR_ART_API_KEY}`,
+  };
+
+  // Preload images
+  useEffect(() => {
+    PRODUCTS.forEach(product => {
+      const img = new Image();
+      img.src = PRODUCT_IMAGE_MAP[product];
+    });
+  }, []);
+
+  const openModal = (imageUrl: string) => {
+    setModalImage(imageUrl);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setModalImage('');
   };
 
   const uploadImageToTensorArt = async (imageData: string): Promise<string> => {
@@ -275,6 +297,7 @@ export default function CaslaQuartzImageGenerator() {
       // Chờ tất cả các ảnh được tạo và cập nhật trạng thái
       const imageUrls = await Promise.all(imagePromises);
       setGeneratedImages(imageUrls);
+      toast.success(`Tạo thành công ${imageUrls.length} ảnh!`);
     } catch (err: unknown) {
       if (axios.isAxiosError(err) && err.response) {
         setError(`Lỗi từ server: ${err.response.data.message || err.message}`);
@@ -282,6 +305,7 @@ export default function CaslaQuartzImageGenerator() {
         setError(`Có lỗi xảy ra khi tạo ảnh: ${(err as Error).message}`);
       }
       console.error(err);
+      toast.error('Có lỗi xảy ra khi tạo ảnh');
     } finally {
       setLoading(false);
     }
@@ -326,6 +350,7 @@ export default function CaslaQuartzImageGenerator() {
       const jobId = response.data.job.id;
       const imageUrl = await pollJobStatus(jobId);
       setGeneratedImages([imageUrl]); // Chỉ tạo một ảnh cho text2img
+      toast.success('Tạo ảnh thành công!');
     } catch (err: unknown) {
       if (axios.isAxiosError(err) && err.response) {
         setError(`Lỗi từ server: ${err.response.data.message || err.message}`);
@@ -333,6 +358,7 @@ export default function CaslaQuartzImageGenerator() {
         setError(`Có lỗi xảy ra khi tạo ảnh: ${(err as Error).message}`);
       }
       console.error(err);
+      toast.error('Có lỗi xảy ra khi tạo ảnh');
     } finally {
       setLoading(false);
     }
@@ -351,179 +377,205 @@ export default function CaslaQuartzImageGenerator() {
 
   return (
     <div className="app-container">
-      <div className="overlay">
-        <div className="content">
-          <header className="header">
-            <img src="logo.png" alt="Casla Quartz Logo" />
-            <h1>Đưa Kiệt Tác Vào Công Trình Của Bạn!</h1>
-          </header>
-          <div className="tab-container">
-            <UsageGuide />
-            <div className="tab-buttons">
-              <button
-                className={`tab-button ${activeTab === 'img2img' ? 'active' : ''}`}
-                onClick={() => switchTab('img2img')}
-              >
-                Tạo Ảnh CaslaQuartz Cùng Công Trình Có Sẵn
-              </button>
-              <button
-                className={`tab-button ${activeTab === 'text2img' ? 'active' : ''}`}
-                onClick={() => switchTab('text2img')}
-              >
-                Tạo Ảnh CaslaQuartz Từ Mô Tả Của Bạn
-              </button>
-            </div>
+    <ToastContainer 
+      position="bottom-right"
+      autoClose={3000}
+      hideProgressBar={false}
+      newestOnTop={false}
+      closeOnClick
+      rtl={false}
+      pauseOnFocusLoss
+      draggable
+      pauseOnHover
+    />
+    <div className="overlay">
+      <div className="content">
+        <header className="header">
+          <img src="logo.png" alt="Casla Quartz Logo" />
+          <h1>Đưa Kiệt Tác Vào Công Trình Của Bạn!</h1>
+        </header>
+        <div className="tab-container">
+          <UsageGuide />
+          <div className="tab-buttons">
+            <button
+              className={`tab-button ${activeTab === 'img2img' ? 'active' : ''}`}
+              onClick={() => switchTab('img2img')}
+            >
+              Tạo Ảnh CaslaQuartz Cùng Công Trình Có Sẵn
+            </button>
+            <button
+              className={`tab-button ${activeTab === 'text2img' ? 'active' : ''}`}
+              onClick={() => switchTab('text2img')}
+            >
+              Tạo Ảnh CaslaQuartz Từ Mô Tả Của Bạn
+            </button>
           </div>
-          <div className="grid-container">
-            <div className="input-area">
-              {activeTab === 'img2img' && (
-                <>
-                  <div className="dropzone" onDrop={handleDrop} onDragOver={handleDragOver}>
-                    {uploadedImage ? (
-                      <img src={uploadedImage} alt="Uploaded" className="uploaded-image" />
-                    ) : (
-                      <div onClick={() => document.getElementById('image-upload')?.click()}>
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 8v4m0 0l-4-4m4 4l4-4" />
-                        </svg>
-                        <p>Kéo thả hoặc nhấn để tải ảnh</p>
-                        <input type="file" id="image-upload" className="hidden" accept="image/*" onChange={handleImageUpload} />
-                      </div>
-                    )}
-                  </div>
-                  <div>
-                    <label htmlFor="position">Vị trí đặt đá:</label>
-                    <select
-                      id="position"
-                      value={isCustomPosition ? 'custom' : position}
-                      onChange={handlePositionChange}
-                    >
-                      <option value="floor">Sàn nhà</option>
-                      <option value="wall">Tường</option>
-                      <option value="countertop">Mặt bàn</option>
-                      <option value="stair">Cầu thang</option>
-                      <option value="tabletop">Mặt bàn</option>
-                      <option value="backplash">Tường bếp</option>
-                      <option value="counter">Quầy bar</option>
-                      <option value="coffeetable">Bàn cafe</option>
-                      <option value="custom">Tùy chỉnh</option>
-                    </select>
-                    {isCustomPosition && (
-                      <input
-                        type="text"
-                        value={position}
-                        onChange={handleCustomPositionChange}
-                        placeholder="Nhập vị trí tùy chỉnh..."
-                        maxLength={30}
-                        className="custom-position-input"
-                      />
-                    )}
-                  </div>
-                  <div>
-                    <label htmlFor="size-img2img">Kích thước:</label>
-                    <select id="size-img2img" value={img2imgSize} onChange={(e) => setImg2ImgSize(e.target.value)}>
-                      <option value="1152x768">1152x768</option>
-                      <option value="1024x1024">1024x1024</option>
-                      <option value="768x1152">768x1152</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label>Chọn tối đa 5 sản phẩm:</label>
-                    <div className="product-grid">
-                      {renderProducts(img2imgSelectedProducts, setImg2ImgSelectedProducts)}
-                    </div>
-                  </div>
-                  <button
-                    className="generate-button"
-                    onClick={processImg2Img}
-                    disabled={loading || !uploadedImage || img2imgSelectedProducts.length === 0}
-                  >
-                    {loading ? 'Đang xử lý...' : 'Tạo ảnh'}
-                  </button>
-                </>
-              )}
-              {activeTab === 'text2img' && (
-                <>
-                  <div>
-                    <label htmlFor="prompt">Mô tả của bạn:</label>
-                    <textarea
-                      id="prompt"
-                      placeholder="Nhập mô tả chi tiết..."
-                      value={prompt}
-                      onChange={(e) => setPrompt(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="size-text2img">Kích thước:</label>
-                    <select id="size-text2img" value={text2ImgSize} onChange={(e) => setText2ImgSize(e.target.value)}>
-                      <option value="1024x1024">1024x1024</option>
-                      <option value="768x512">768x512</option>
-                      <option value="512x768">512x768</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label>Chọn sản phẩm:</label>
-                    <div className="product-grid">
-                      {renderProducts(text2imgSelectedProducts, setText2ImgSelectedProducts)}
-                    </div>
-                  </div>
-                  <button
-                    className="generate-button"
-                    onClick={processText2Img}
-                    disabled={loading || !prompt || text2imgSelectedProducts.length === 0}
-                  >
-                    {loading ? 'Đang xử lý...' : 'Tạo ảnh'}
-                  </button>
-                </>
-              )}
-            </div>
-            <div className="output-area">
-              {(() => {
-                if (error) {
-                  return (
-                    <div className="error-message">
-                      <strong>Lỗi!</strong> <span>{error}</span>
-                    </div>
-                  );
-                }
-                if (loading) {
-                  return (
-                    <div className="loading-container">
-                      <div className="spinner">
-                        <div></div>
-                      </div>
-                      <div className="progress-bar">
-                        <div
-                          className="progress-bar-fill"
-                          style={{ width: `${progress}%` }}
-                        ></div>
-                      </div>
-                      <p className="loading-text quote-text">{quotes[currentQuote]}</p>
-                      <p className="loading-text estimated-time">Thời gian chờ dự kiến: 1-2 phút</p>
-                    </div>
-                  );
-                }
-                if (generatedImages.length > 0) {
-                  return (
-                    <div className="generated-images-container">
-                      {generatedImages.map((imageUrl, index) => (
-                        <div key={index} className="generated-image-wrapper">
-                          <img src={imageUrl} alt={`Generated ${index + 1}`} className="generated-image" />
-                          <a href={imageUrl} download={`generated_image_${index + 1}.png`} className="download-button">
-                            Tải ảnh {index + 1} về máy
-                          </a>
-                        </div>
-                      ))}
-                    </div>
-                  );
-                }
-                return <div className="output-placeholder">Ảnh sẽ hiển thị ở đây sau khi tạo</div>;
-              })()}
-            </div>
-          </div>
-          <Footer />
         </div>
+        <div className="grid-container">
+          <div className="input-area">
+            {activeTab === 'img2img' && (
+              <>
+                <div className="dropzone" onDrop={handleDrop} onDragOver={handleDragOver}>
+                  {uploadedImage ? (
+                    <img src={uploadedImage} alt="Uploaded" className="uploaded-image" />
+                  ) : (
+                    <div onClick={() => document.getElementById('image-upload')?.click()}>
+                      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 8v4m0 0l-4-4m4 4l4-4" />
+                      </svg>
+                      <p>Kéo thả hoặc nhấn để tải ảnh</p>
+                      <input type="file" id="image-upload" className="hidden" accept="image/*" onChange={handleImageUpload} />
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <label htmlFor="position">Vị trí đặt đá:</label>
+                  <select
+                    id="position"
+                    value={isCustomPosition ? 'custom' : position}
+                    onChange={handlePositionChange}
+                  >
+                    <option value="floor">Sàn nhà</option>
+                    <option value="wall">Tường</option>
+                    <option value="countertop">Mặt bàn</option>
+                    <option value="stair">Cầu thang</option>
+                    <option value="tabletop">Mặt bàn</option>
+                    <option value="backplash">Tường bếp</option>
+                    <option value="counter">Quầy bar</option>
+                    <option value="coffeetable">Bàn cafe</option>
+                    <option value="custom">Tùy chỉnh</option>
+                  </select>
+                  {isCustomPosition && (
+                    <input
+                      type="text"
+                      value={position}
+                      onChange={handleCustomPositionChange}
+                      placeholder="Nhập vị trí tùy chỉnh..."
+                      maxLength={30}
+                      className="custom-position-input"
+                    />
+                  )}
+                </div>
+                <div>
+                  <label htmlFor="size-img2img">Kích thước:</label>
+                  <select id="size-img2img" value={img2imgSize} onChange={(e) => setImg2ImgSize(e.target.value)}>
+                    <option value="1152x768">1152x768</option>
+                    <option value="1024x1024">1024x1024</option>
+                    <option value="768x1152">768x1152</option>
+                  </select>
+                </div>
+                <div>
+                  <label>Chọn tối đa 5 sản phẩm:</label>
+                  <div className="product-grid">
+                    {renderProducts(img2imgSelectedProducts, setImg2ImgSelectedProducts)}
+                  </div>
+                </div>
+                <button
+                  className="generate-button"
+                  onClick={processImg2Img}
+                  disabled={loading || !uploadedImage || img2imgSelectedProducts.length === 0}
+                >
+                  {loading ? 'Đang xử lý...' : 'Tạo ảnh'}
+                </button>
+              </>
+            )}
+            {activeTab === 'text2img' && (
+              <>
+                <div>
+                  <label htmlFor="prompt">Mô tả của bạn:</label>
+                  <textarea
+                    id="prompt"
+                    placeholder="Nhập mô tả chi tiết..."
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="size-text2img">Kích thước:</label>
+                  <select id="size-text2img" value={text2ImgSize} onChange={(e) => setText2ImgSize(e.target.value)}>
+                    <option value="1024x1024">1024x1024</option>
+                    <option value="768x512">768x512</option>
+                    <option value="512x768">512x768</option>
+                  </select>
+                </div>
+                <div>
+                  <label>Chọn sản phẩm:</label>
+                  <div className="product-grid">
+                    {renderProducts(text2imgSelectedProducts, setText2ImgSelectedProducts)}
+                  </div>
+                </div>
+                <button
+                  className="generate-button"
+                  onClick={processText2Img}
+                  disabled={loading || !prompt || text2imgSelectedProducts.length === 0}
+                >
+                  {loading ? 'Đang xử lý...' : 'Tạo ảnh'}
+                </button>
+              </>
+            )}
+          </div>
+          <div className="output-area">
+            {(() => {
+              if (error) {
+                return (
+                  <div className="error-message">
+                    <strong>Lỗi!</strong> <span>{error}</span>
+                  </div>
+                );
+              }
+              if (loading) {
+                return (
+                  <div className="loading-container">
+                    <div className="spinner">
+                      <div></div>
+                    </div>
+                    <div className="progress-bar">
+                      <div
+                        className="progress-bar-fill"
+                        style={{ width: `${progress}%` }}
+                      ></div>
+                    </div>
+                    <p className="loading-text quote-text">{quotes[currentQuote]}</p>
+                    <p className="loading-text estimated-time">Thời gian chờ dự kiến: 1-2 phút</p>
+                  </div>
+                );
+              }
+              if (generatedImages.length > 0) {
+                return (
+                  <div className="generated-images-container">
+                    {generatedImages.map((imageUrl, index) => (
+                      <div 
+                        key={index} 
+                        className="generated-image-wrapper"
+                        onClick={() => openModal(imageUrl)}
+                      >
+                        <img src={imageUrl} alt={`Generated ${index + 1}`} className="generated-image" />
+                        <a 
+                          href={imageUrl} 
+                          download={`generated_image_${index + 1}.png`} 
+                          className="download-button"
+                          onClick={e => e.stopPropagation()}
+                        >
+                          Tải ảnh {index + 1} về máy
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                );
+              }
+              return <div className="output-placeholder">Ảnh sẽ hiển thị ở đây sau khi tạo</div>;
+            })()}
+          </div>
+        </div>
+        <Footer />
       </div>
     </div>
-  );
+    {isModalOpen && (
+      <div className="image-modal" onClick={closeModal}>
+        <span className="close-modal">&times;</span>
+        <img src={modalImage} alt="Full size" onClick={e => e.stopPropagation()} />
+      </div>
+    )}
+  </div>
+);
 }
