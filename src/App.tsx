@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import fabric from 'fabric'; // Sử dụng default import
 import Footer from './components/Footer';
 import UsageGuide from './components/UsageGuide';
 
@@ -61,11 +60,13 @@ const App: React.FC = () => {
   const [currentQuote, setCurrentQuote] = useState<number>(0);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [modalImage, setModalImage] = useState<string>('');
-  const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
   const [maskImage, setMaskImage] = useState<string | null>(null);
   const [brushSize, setBrushSize] = useState<number>(10);
   const [brushColor, setBrushColor] = useState<string>('#ff0000');
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const drawingRef = useRef<boolean>(false);
+  const lastPosRef = useRef<{ x: number; y: number } | null>(null);
+  const imageRef = useRef<HTMLImageElement | null>(null);
 
   const quotes = [
     "Đá thạch anh mang lại sự sang trọng và bền bỉ cho mọi không gian.",
@@ -82,92 +83,97 @@ const App: React.FC = () => {
     Authorization: `Bearer ${process.env.REACT_APP_TENSOR_ART_API_KEY || ''}`,
   };
 
-  // Khởi tạo canvas khi ảnh được upload
+  // Khởi tạo canvas và vẽ ảnh khi upload
   useEffect(() => {
-    if (uploadedImage && canvasRef.current && !canvas) {
+    if (uploadedImage && canvasRef.current) {
       console.log('Initializing canvas with image:', uploadedImage);
 
-      // Kiểm tra xem fabric.Canvas có tồn tại không
-      if (!fabric || typeof fabric.Canvas !== 'function') {
-        console.error('Fabric Canvas is not available. Check fabric import and version.');
-        setError('Thư viện Fabric không hoạt động. Vui lòng kiểm tra phiên bản hoặc tải lại trang.');
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        console.error('Cannot get 2D context for canvas');
+        setError('Không thể khởi tạo canvas. Vui lòng thử lại.');
         return;
       }
 
-      // Khởi tạo canvas
-      const newCanvas = new fabric.Canvas(canvasRef.current, {
-        isDrawingMode: true, // Bật chế độ vẽ
-        width: 800, // Đặt kích thước cố định
-        height: 600,
-      });
+      // Tạo một hình ảnh để load ảnh upload
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.src = uploadedImage;
 
-      // Thiết lập bút vẽ
-      newCanvas.freeDrawingBrush = new fabric.PencilBrush(newCanvas);
-      newCanvas.freeDrawingBrush.width = brushSize;
-      newCanvas.freeDrawingBrush.color = brushColor;
-
-      // Load ảnh lên canvas
-      fabric.Image.fromURL(uploadedImage, (img: fabric.Image) => {
-        if (!img.width || !img.height) {
-          console.error('Invalid image dimensions');
-          setError('Ảnh không hợp lệ. Vui lòng chọn ảnh khác.');
-          return;
-        }
-        console.log('Image loaded:', img.width, img.height);
-
-        // Điều chỉnh kích thước ảnh để vừa với canvas
+      img.onload = () => {
+        // Điều chỉnh kích thước canvas để vừa với ảnh
         const scale = Math.min(1, 800 / img.width, 600 / img.height);
-        img.scale(scale);
-        newCanvas.setDimensions({
-          width: img.width * scale,
-          height: img.height * scale,
-        });
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
 
-        // Đặt ảnh làm background
-        newCanvas.setBackgroundImage(img, () => {
-          newCanvas.renderAll();
-          console.log('Canvas initialized with image');
-        }, {
-          scaleX: scale,
-          scaleY: scale,
-          crossOrigin: 'anonymous',
-        });
-      }, { crossOrigin: 'anonymous' });
+        // Vẽ ảnh lên canvas
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        imageRef.current = img;
+        console.log('Image loaded and drawn on canvas:', canvas.width, canvas.height);
 
-      setCanvas(newCanvas);
+        // Cập nhật mask lần đầu
+        const maskData = canvas.toDataURL('image/png');
+        setMaskImage(maskData);
+      };
 
-      // Dọn dẹp khi component unmount
-      return () => {
-        newCanvas.dispose();
-        setCanvas(null);
+      img.onerror = () => {
+        console.error('Failed to load image');
+        setError('Không thể tải ảnh. Vui lòng chọn ảnh khác.');
       };
     }
   }, [uploadedImage]);
 
-  // Cập nhật brush settings khi brushSize hoặc brushColor thay đổi
-  useEffect(() => {
-    if (canvas) {
-      canvas.freeDrawingBrush.width = brushSize;
-      canvas.freeDrawingBrush.color = brushColor;
-      canvas.renderAll();
-      console.log('Brush updated:', { brushSize, brushColor });
-    }
-  }, [brushSize, brushColor, canvas]);
+  // Xử lý sự kiện vẽ trên canvas
+  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    drawingRef.current = true;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-  // Cập nhật mask khi vẽ
-  useEffect(() => {
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    lastPosRef.current = { x, y };
+  };
+
+  const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!drawingRef.current) return;
+
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext('2d');
+    if (!canvas || !ctx) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    ctx.beginPath();
+    ctx.moveTo(lastPosRef.current?.x || x, lastPosRef.current?.y || y);
+    ctx.lineTo(x, y);
+    ctx.strokeStyle = brushColor;
+    ctx.lineWidth = brushSize;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+
+    lastPosRef.current = { x, y };
+
+    // Cập nhật mask
+    const maskData = canvas.toDataURL('image/png');
+    setMaskImage(maskData);
+  };
+
+  const stopDrawing = () => {
+    drawingRef.current = false;
+    lastPosRef.current = null;
+
+    // Cập nhật mask sau khi dừng vẽ
+    const canvas = canvasRef.current;
     if (canvas) {
-      const updateMask = () => {
-        if (canvas) {
-          const maskData = canvas.toDataURL({ format: 'png', quality: 1 });
-          setMaskImage(maskData);
-          console.log('Mask updated:', maskData);
-        }
-      };
-      canvas.on('mouse:up', updateMask);
-      return () => canvas.off('mouse:up', updateMask);
+      const maskData = canvas.toDataURL('image/png');
+      setMaskImage(maskData);
+      console.log('Mask updated:', maskData);
     }
-  }, [canvas]);
+  };
 
   const validateProductCode = (code: string): boolean => PRODUCTS.includes(code);
 
@@ -322,7 +328,14 @@ const App: React.FC = () => {
             <div className="input-area">
               <div className="dropzone" onDrop={handleDrop} onDragOver={handleDragOver}>
                 {uploadedImage ? (
-                  <canvas ref={canvasRef} id="mask-canvas" />
+                  <canvas
+                    ref={canvasRef}
+                    id="mask-canvas"
+                    onMouseDown={startDrawing}
+                    onMouseMove={draw}
+                    onMouseUp={stopDrawing}
+                    onMouseOut={stopDrawing}
+                  />
                 ) : (
                   <div onClick={() => document.getElementById('image-upload')?.click()}>
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -360,7 +373,7 @@ const App: React.FC = () => {
                   </div>
                 )}
               </div>
-              {canvas && (
+              {uploadedImage && (
                 <div className="brush-tools">
                   <label>Kích thước brush:</label>
                   <input
