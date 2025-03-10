@@ -17,7 +17,7 @@ const workflowSchema = `
     string fieldName = 2;
     string fieldValue = 3;
   }
-`;
+`.trim();
 
 const root = protobuf.parse(workflowSchema).root;
 const WorkflowRequest = root.lookupType('WorkflowRequest');
