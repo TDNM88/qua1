@@ -61,13 +61,13 @@ export default function CaslaQuartzImageGenerator() {
           color: 'rgba(255, 0, 0, 0.5)',
         },
       });
-  
+
       fabric.Image.fromURL(uploadedImage, (img: fabric.Image) => {
         newCanvas.setWidth(img.width!);
         newCanvas.setHeight(img.height!);
         newCanvas.add(img);
       });
-  
+
       setCanvas(newCanvas);
     }
   }, [uploadedImage]);
@@ -82,6 +82,18 @@ export default function CaslaQuartzImageGenerator() {
       setMaskImage(maskData);
       toast.success('Mask đã được lưu!');
     }
+  };
+
+  // Mở modal hiển thị ảnh lớn
+  const openModal = (imageUrl: string) => {
+    setModalImage(imageUrl);
+    setIsModalOpen(true);
+  };
+
+  // Đóng modal
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setModalImage('');
   };
 
   const uploadImageToTensorArt = async (imageData: string): Promise<string> => {
@@ -407,7 +419,7 @@ export default function CaslaQuartzImageGenerator() {
                     onClick={processImg2Img}
                     disabled={loading || !uploadedImage || !maskImage}
                   >
-                    {loading ? 'Đang xử lý...' : 'Tạo ảnh'}
+                                        {loading ? 'Đang xử lý...' : 'Tạo ảnh'}
                   </button>
                 </>
               )}
