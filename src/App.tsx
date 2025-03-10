@@ -18,6 +18,49 @@ const createMD5 = () => {
   return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 };
 
+const PRODUCTS = [
+  "C1012 Glacier White", "C1026 Polar", "C3269 Ash Grey", "C3168 Silver Wave", "C1005 Milky White",
+  "C2103 Onyx Carrara", "C2104 Massa", "C3105 Casla Cloudy", "C3146 Casla Nova", "C2240 Marquin",
+  "C2262 Concrete (Honed)", "C3311 Calacatta Sky", "C3346 Massimo", "C4143 Mario", "C4145 Marina",
+  "C4202 Calacatta Gold", "C1205 Casla Everest", "C4211 Calacatta Supreme", "C4204 Calacatta Classic",
+  "C1102 Super White", "C4246 Casla Mystery", "C4345 Oro", "C4346 Luxe", "C4342 Casla Eternal",
+  "C4221 Athena", "C4255 Calacatta Extra"
+];
+
+const PRODUCT_IMAGE_MAP: { [key: string]: string } = {
+  "C1012 Glacier White": `${process.env.PUBLIC_URL}/product_images/C1012.jpg`,
+  "C1026 Polar": `${process.env.PUBLIC_URL}/product_images/C1026.jpg`,
+  "C3269 Ash Grey": `${process.env.PUBLIC_URL}/product_images/C3269.jpg`,
+  "C3168 Silver Wave": `${process.env.PUBLIC_URL}/product_images/C3168.jpg`,
+  "C1005 Milky White": `${process.env.PUBLIC_URL}/product_images/C1005.jpg`,
+  "C2103 Onyx Carrara": `${process.env.PUBLIC_URL}/product_images/C2103.jpg`,
+  "C2104 Massa": `${process.env.PUBLIC_URL}/product_images/C2104.jpg`,
+  "C3105 Casla Cloudy": `${process.env.PUBLIC_URL}/product_images/C3105.jpg`,
+  "C3146 Casla Nova": `${process.env.PUBLIC_URL}/product_images/C3146.jpg`,
+  "C2240 Marquin": `${process.env.PUBLIC_URL}/product_images/C2240.jpg`,
+  "C2262 Concrete (Honed)": `${process.env.PUBLIC_URL}/product_images/C2262.jpg`,
+  "C3311 Calacatta Sky": `${process.env.PUBLIC_URL}/product_images/C3311.jpg`,
+  "C3346 Massimo": `${process.env.PUBLIC_URL}/product_images/C3346.jpg`,
+  "C4143 Mario": `${process.env.PUBLIC_URL}/product_images/C4143.jpg`,
+  "C4145 Marina": `${process.env.PUBLIC_URL}/product_images/C4145.jpg`,
+  "C4202 Calacatta Gold": `${process.env.PUBLIC_URL}/product_images/C4202.jpg`,
+  "C1205 Casla Everest": `${process.env.PUBLIC_URL}/product_images/C1205.jpg`,
+  "C4211 Calacatta Supreme": `${process.env.PUBLIC_URL}/product_images/C4211.jpg`,
+  "C4204 Calacatta Classic": `${process.env.PUBLIC_URL}/product_images/C4204.jpg`,
+  "C1102 Super White": `${process.env.PUBLIC_URL}/product_images/C1102.jpg`,
+  "C4246 Casla Mystery": `${process.env.PUBLIC_URL}/product_images/C4246.jpg`,
+  "C4345 Oro": `${process.env.PUBLIC_URL}/product_images/C4345.jpg`,
+  "C4346 Luxe": `${process.env.PUBLIC_URL}/product_images/C4346.jpg`,
+  "C4342 Casla Eternal": `${process.env.PUBLIC_URL}/product_images/C4342.jpg`,
+  "C4221 Athena": `${process.env.PUBLIC_URL}/product_images/C4221.jpg`,
+  "C4255 Calacatta Extra": `${process.env.PUBLIC_URL}/product_images/C4255.jpg`,
+};
+
+// Hàm tạo request_id ngẫu nhiên
+const createMD5 = () => {
+  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+};
+
 export default function CaslaQuartzImageGenerator() {
   const [productCode, setProductCode] = useState<string>('');
   const [activeTab, setActiveTab] = useState<TabType>('img2img');
@@ -50,23 +93,6 @@ export default function CaslaQuartzImageGenerator() {
     'Content-Type': 'application/json',
     Accept: 'application/json',
     Authorization: `Bearer ${process.env.REACT_APP_TENSOR_ART_API_KEY}`,
-  };
-
-  // Danh sách sản phẩm
-  const PRODUCTS = [
-    "C1012 Glacier White", "C1026 Polar", "C3269 Ash Grey", "C3168 Silver Wave", "C1005 Milky White",
-    "C2103 Onyx Carrara", "C2104 Massa", "C3105 Casla Cloudy", "C3146 Casla Nova", "C2240 Marquin",
-    "C2262 Concrete (Honed)", "C3311 Calacatta Sky", "C3346 Massimo", "C4143 Mario", "C4145 Marina",
-    "C4202 Calacatta Gold", "C1205 Casla Everest", "C4211 Calacatta Supreme", "C4204 Calacatta Classic",
-    "C1102 Super White", "C4246 Casla Mystery", "C4345 Oro", "C4346 Luxe", "C4342 Casla Eternal",
-    "C4221 Athena", "C4255 Calacatta Extra"
-  ];
-
-  // Bản đồ ảnh sản phẩm
-  const PRODUCT_IMAGE_MAP: { [key: string]: string } = {
-    "C1012 Glacier White": `${process.env.PUBLIC_URL}/product_images/C1012.jpg`,
-    "C1026 Polar": `${process.env.PUBLIC_URL}/product_images/C1026.jpg`,
-    // ... các sản phẩm khác ...
   };
 
   const validateProductCode = (code: string) => {
@@ -225,7 +251,7 @@ export default function CaslaQuartzImageGenerator() {
       return;
     }
     if (!validateProductCode(productCode)) {
-      setError('Mã sản phẩm không hợp lệ. Vui lòng nhập mã sản phẩm đúng.');
+      setError('Mã sản phẩm không hợp lệ. Vui lòng chọn từ danh sách sản phẩm.');
       return;
     }
     setGeneratedImages([]);
@@ -299,7 +325,7 @@ export default function CaslaQuartzImageGenerator() {
       return;
     }
     if (!validateProductCode(productCode)) {
-      setError('Mã sản phẩm không hợp lệ. Vui lòng nhập mã sản phẩm đúng.');
+      setError('Mã sản phẩm không hợp lệ. Vui lòng chọn từ danh sách sản phẩm.');
       return;
     }
     setGeneratedImages([]);
@@ -362,6 +388,37 @@ export default function CaslaQuartzImageGenerator() {
   }, [loading]);
 
   const selectedProductImage = PRODUCT_IMAGE_MAP[productCode] || '';
+
+  // Thêm phần JSX cho hiển thị danh sách sản phẩm
+  const productInputSection = (
+    <div className="product-selection">
+      <label htmlFor="productCode">Mã sản phẩm:</label>
+      <input
+        type="text"
+        id="productCode"
+        value={productCode}
+        onChange={(e) => setProductCode(e.target.value)}
+        placeholder="Nhập mã sản phẩm..."
+        list="productList"
+      />
+      <datalist id="productList">
+        {PRODUCTS.map((product, index) => (
+          <option key={index} value={product}>
+            {product}
+          </option>
+        ))}
+      </datalist>
+      {productCode && PRODUCT_IMAGE_MAP[productCode] && (
+        <div className="product-preview">
+          <img 
+            src={PRODUCT_IMAGE_MAP[productCode]} 
+            alt="Product Preview" 
+            className="product-image"
+          />
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <div className="app-container">
@@ -444,17 +501,7 @@ export default function CaslaQuartzImageGenerator() {
                       />
                     )}
                   </div>
-                  <div>
-                    <label htmlFor="productCode">Mã sản phẩm:</label>
-                    <input
-                      type="text"
-                      id="productCode"
-                      value={productCode}
-                      onChange={(e) => setProductCode(e.target.value)}
-                      placeholder="Nhập mã sản phẩm..."
-                      maxLength={20}
-                    />
-                  </div>
+                  {productInputSection}
                   <button
                     className="generate-button"
                     onClick={saveMask}
@@ -490,17 +537,7 @@ export default function CaslaQuartzImageGenerator() {
                       <option value="512x768">512x768</option>
                     </select>
                   </div>
-                  <div>
-                    <label htmlFor="productCode">Mã sản phẩm:</label>
-                    <input
-                      type="text"
-                      id="productCode"
-                      value={productCode}
-                      onChange={(e) => setProductCode(e.target.value)}
-                      placeholder="Nhập mã sản phẩm..."
-                      maxLength={20}
-                    />
-                  </div>
+                  {productInputSection}
                   <button
                     className="generate-button"
                     onClick={processText2Img}
