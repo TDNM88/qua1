@@ -3,7 +3,7 @@ import axios from 'axios';
 import Footer from './components/Footer';
 import UsageGuide from './components/UsageGuide';
 import * as protobuf from 'protobufjs';
-import './styles.css'; // Sửa từ './App.css' thành './styles.css'
+import './styles.css';
 
 // Định nghĩa schema protobuf
 const workflowSchema = `
