@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import fabric from 'fabric'; // Sửa import ở đây
+import { fabric } from 'fabric'; // Import named export từ fabric
 import Footer from './components/Footer';
 import UsageGuide from './components/UsageGuide';
 
@@ -57,14 +57,14 @@ export default function CaslaQuartzImageGenerator() {
   const [generatedImages, setGeneratedImages] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [progress, setProgress] = useState(0);
-  const [currentQuote, setCurrentQuote] = useState(0);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalImage, setModalImage] = useState('');
+  const [progress, setProgress] = useState<number>(0);
+  const [currentQuote, setCurrentQuote] = useState<number>(0);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [modalImage, setModalImage] = useState<string>('');
   const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
   const [maskImage, setMaskImage] = useState<string | null>(null);
   const [brushSize, setBrushSize] = useState<number>(10);
-  const [brushColor, setBrushColor] = useState<string>('#ff0000'); // Sửa màu brush ở đây
+  const [brushColor, setBrushColor] = useState<string>('#ff0000');
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const quotes = [
@@ -82,38 +82,48 @@ export default function CaslaQuartzImageGenerator() {
     Authorization: `Bearer ${process.env.REACT_APP_TENSOR_ART_API_KEY}`,
   };
 
-  const validateProductCode = (code: string) => {
+  const validateProductCode = (code: string): boolean => {
     return PRODUCTS.includes(code);
   };
 
-  // Khởi tạo canvas khi ảnh được tải lên
   useEffect(() => {
-    if (uploadedImage && canvasRef.current) {
+    if (uploadedImage && canvasRef.current && !canvas) {
       const newCanvas = new fabric.Canvas(canvasRef.current, {
         isDrawingMode: true,
-        freeDrawingBrush: {
-          width: brushSize,
-          color: brushColor,
-        },
       });
+
+      newCanvas.freeDrawingBrush = new fabric.PencilBrush(newCanvas);
+      newCanvas.freeDrawingBrush.width = brushSize;
+      newCanvas.freeDrawingBrush.color = brushColor;
 
       fabric.Image.fromURL(uploadedImage, (img: fabric.Image) => {
-        const scale = Math.min(1, 800 / img.width!, 600 / img.height!); // Giới hạn kích thước canvas
+        if (!img.width || !img.height) return;
+        const scale = Math.min(1, 800 / img.width, 600 / img.height);
         img.scale(scale);
-        newCanvas.setWidth(img.width! * scale);
-        newCanvas.setHeight(img.height! * scale);
-        newCanvas.add(img);
-        newCanvas.renderAll();
-      });
+        newCanvas.setWidth(img.width * scale);
+        newCanvas.setHeight(img.height * scale);
+        newCanvas.setBackgroundImage(img, newCanvas.renderAll.bind(newCanvas));
+      }, { crossOrigin: 'anonymous' });
 
       setCanvas(newCanvas);
-    }
-  }, [uploadedImage, brushSize, brushColor]);
 
-  // Tự động lưu mask khi người dùng vẽ
+      return () => {
+        newCanvas.dispose();
+        setCanvas(null);
+      };
+    }
+  }, [uploadedImage]);
+
   useEffect(() => {
     if (canvas) {
-      const handleMouseUp = () => {
+      canvas.freeDrawingBrush.width = brushSize;
+      canvas.freeDrawingBrush.color = brushColor;
+    }
+  }, [brushSize, brushColor, canvas]);
+
+  useEffect(() => {
+    if (canvas) {
+      const updateMask = () => {
         const maskData = canvas.toDataURL({
           format: 'png',
           quality: 1,
@@ -121,20 +131,18 @@ export default function CaslaQuartzImageGenerator() {
         setMaskImage(maskData);
       };
 
-      canvas.on('mouse:up', handleMouseUp);
+      canvas.on('mouse:up', updateMask);
       return () => {
-        canvas.off('mouse:up', handleMouseUp);
+        canvas.off('mouse:up', updateMask);
       };
     }
   }, [canvas]);
 
-  // Mở modal hiển thị ảnh lớn
   const openModal = (imageUrl: string) => {
     setModalImage(imageUrl);
     setIsModalOpen(true);
   };
 
-  // Đóng modal
   const closeModal = () => {
     setIsModalOpen(false);
     setModalImage('');
@@ -189,7 +197,7 @@ export default function CaslaQuartzImageGenerator() {
     throw new Error('Job timed out after 3 minutes');
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
@@ -201,7 +209,7 @@ export default function CaslaQuartzImageGenerator() {
     }
   };
 
-  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const file = e.dataTransfer.files[0];
     if (file) {
@@ -218,64 +226,52 @@ export default function CaslaQuartzImageGenerator() {
 
   const processImg2Img = async () => {
     if (!uploadedImage || !maskImage || !productCode) {
-      setError('Vui lòng tải ảnh, vẽ mask và nhập mã sản phẩm.');
+      setError('Vui lòng tải ảnh, vẽ mask và chọn mã sản phẩm.');
       return;
     }
     if (!validateProductCode(productCode)) {
-      setError('Mã sản phẩm không hợp lệ. Vui lòng chọn từ danh sách sản phẩm.');
+      setError('Mã sản phẩm không hợp lệ.');
       return;
     }
+
+    setLoading(true);
     setGeneratedImages([]);
     setProgress(0);
     setCurrentQuote(0);
-    setLoading(true);
     setError(null);
 
     try {
-      // Upload ảnh input từ người dùng (ảnh đã được tạo mask)
-      const imageResourceId = await uploadImageToTensorArt(uploadedImage);
-      // Upload ảnh sản phẩm
-      const productImageUrl = PRODUCT_IMAGE_MAP[productCode];
-      const productImageResourceId = await uploadImageToTensorArt(productImageUrl);
+      const imageResourceId = await uploadImageToTensorArt(maskImage);
+      const productImageResourceId = await uploadImageToTensorArt(PRODUCT_IMAGE_MAP[productCode]);
 
-      // Chuẩn bị dữ liệu cho workflow template
       const workflowData = {
-        request_id: Date.now().toString(), // Sử dụng timestamp làm request_id
+        request_id: Date.now().toString(),
         templateId: WORKFLOW_TEMPLATE_ID,
         fields: {
           fieldAttrs: [
-            {
-              nodeId: "731", // Node cho ảnh đã được tạo mask
-              fieldName: "image",
-              fieldValue: imageResourceId,
-            },
-            {
-              nodeId: "735", // Node cho ảnh sản phẩm
-              fieldName: "image",
-              fieldValue: productImageResourceId,
-            },
+            { nodeId: "731", fieldName: "image", fieldValue: imageResourceId },
+            { nodeId: "735", fieldName: "image", fieldValue: productImageResourceId },
           ],
         },
       };
 
-      // Gửi yêu cầu tạo job từ workflow template
       const response = await axios.post(
         `${TENSOR_ART_API_URL}/jobs/workflow/template`,
         workflowData,
         { headers }
       );
+
       const jobId = response.data.job.id;
       const imageUrl = await pollJobStatus(jobId);
       setGeneratedImages([imageUrl]);
       toast.success('Tạo ảnh thành công!');
-    } catch (err: unknown) {
-      if (axios.isAxiosError(err) && err.response) {
-        setError(`Lỗi từ server: ${err.response.data.message || err.message}`);
-      } else {
-        setError(`Có lỗi xảy ra khi tạo ảnh: ${(err as Error).message}`);
-      }
+    } catch (err) {
+      const errorMessage = axios.isAxiosError(err) && err.response
+        ? `Lỗi từ server: ${err.response.data.message || err.message}`
+        : `Có lỗi xảy ra: ${(err as Error).message}`;
+      setError(errorMessage);
+      toast.error('Có lỗi khi tạo ảnh');
       console.error(err);
-      toast.error('Có lỗi xảy ra khi tạo ảnh');
     } finally {
       setLoading(false);
     }
@@ -292,9 +288,6 @@ export default function CaslaQuartzImageGenerator() {
     return () => clearInterval(interval);
   }, [loading]);
 
-  const selectedProductImage = PRODUCT_IMAGE_MAP[productCode] || '';
-
-  // Thêm phần JSX cho hiển thị danh sách sản phẩm
   const productInputSection = (
     <div className="product-selection">
       <label htmlFor="productCode">Mã sản phẩm:</label>
@@ -363,81 +356,74 @@ export default function CaslaQuartzImageGenerator() {
                 )}
               </div>
               {productInputSection}
-              <div className="brush-tools">
-                <label>Kích thước brush:</label>
-                <input
-                  type="range"
-                  min="1"
-                  max="50"
-                  value={brushSize}
-                  onChange={(e) => setBrushSize(Number(e.target.value))}
-                />
-                <label>Màu brush:</label>
-                <input
-                  type="color"
-                  value={brushColor}
-                  onChange={(e) => setBrushColor(e.target.value)}
-                />
-              </div>
+              {canvas && (
+                <div className="brush-tools">
+                  <label>Kích thước brush:</label>
+                  <input
+                    type="range"
+                    min="1"
+                    max="50"
+                    value={brushSize}
+                    onChange={(e) => setBrushSize(Number(e.target.value))}
+                  />
+                  <label>Màu brush:</label>
+                  <input
+                    type="color"
+                    value={brushColor}
+                    onChange={(e) => setBrushColor(e.target.value)}
+                  />
+                </div>
+              )}
               <button
                 className="generate-button"
                 onClick={processImg2Img}
-                disabled={loading || !uploadedImage || !maskImage}
+                disabled={loading || !uploadedImage || !maskImage || !productCode}
               >
                 {loading ? 'Đang xử lý...' : 'Tạo ảnh'}
               </button>
             </div>
             <div className="output-area">
-              {(() => {
-                if (error) {
-                  return (
-                    <div className="error-message">
-                      <strong>Lỗi!</strong> <span>{error}</span>
+              {error ? (
+                <div className="error-message">
+                  <strong>Lỗi!</strong> <span>{error}</span>
+                </div>
+              ) : loading ? (
+                <div className="loading-container">
+                  <div className="spinner">
+                    <div></div>
+                  </div>
+                  <div className="progress-bar">
+                    <div
+                      className="progress-bar-fill"
+                      style={{ width: `${progress}%` }}
+                    ></div>
+                  </div>
+                  <p className="loading-text quote-text">{quotes[currentQuote]}</p>
+                  <p className="loading-text estimated-time">Thời gian chờ dự kiến: 1-2 phút</p>
+                </div>
+              ) : generatedImages.length > 0 ? (
+                <div className="generated-images-container">
+                  {generatedImages.map((imageUrl, index) => (
+                    <div 
+                      key={index} 
+                      className="generated-image-wrapper"
+                      onClick={() => openModal(imageUrl)}
+                    >
+                      <img src={imageUrl} alt={`Generated ${index + 1}`} className="generated-image" />
+                      <a 
+                        href={imageUrl} 
+                        download={`generated_image_${index + 1}.png`} 
+                        className="download-button"
+                        onClick={e => e.stopPropagation()}
+                      >
+                        Tải ảnh {index + 1} về máy
+                      </a>
                     </div>
-                  );
-                }
-                if (loading) {
-                  return (
-                    <div className="loading-container">
-                      <div className="spinner">
-                        <div></div>
-                      </div>
-                      <div className="progress-bar">
-                        <div
-                          className="progress-bar-fill"
-                          style={{ width: `${progress}%` }}
-                        ></div>
-                      </div>
-                      <p className="loading-text quote-text">{quotes[currentQuote]}</p>
-                      <p className="loading-text estimated-time">Thời gian chờ dự kiến: 1-2 phút</p>
-                    </div>
-                  );
-                }
-                if (generatedImages.length > 0) {
-                  return (
-                    <div className="generated-images-container">
-                      {generatedImages.map((imageUrl, index) => (
-                        <div 
-                          key={index} 
-                          className="generated-image-wrapper"
-                          onClick={() => openModal(imageUrl)}
-                        >
-                          <img src={imageUrl} alt={`Generated ${index + 1}`} className="generated-image" />
-                          <a 
-                            href={imageUrl} 
-                            download={`generated_image_${index + 1}.png`} 
-                            className="download-button"
-                            onClick={e => e.stopPropagation()}
-                          >
-                            Tải ảnh {index + 1} về máy
-                          </a>
-                        </div>
-                      ))}
-                    </div>
-                  );
-                }
-                return <div className="output-placeholder">Ảnh sẽ hiển thị ở đây sau khi tạo</div>;
-              })()}
+                  ))}
+                </div>
+              ) : (
+                <div className="output-placeholder">Ảnh sẽ hiển thị ở đây sau khi tạo</div>
+              )}
             </div>
           </div>
           <Footer />
@@ -445,7 +431,7 @@ export default function CaslaQuartzImageGenerator() {
       </div>
       {isModalOpen && (
         <div className="image-modal" onClick={closeModal}>
-          <span className="close-modal">&times;</span>
+          <span className="close-modal">×</span>
           <img src={modalImage} alt="Full size" onClick={e => e.stopPropagation()} />
         </div>
       )}
