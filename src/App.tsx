@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import fabric from 'fabric'; // Sử dụng default import để tránh lỗi TS2595
+import fabric from 'fabric';
 import Footer from './components/Footer';
 import UsageGuide from './components/UsageGuide';
 
@@ -95,7 +95,7 @@ const App: React.FC = () => {
       newCanvas.freeDrawingBrush.width = brushSize;
       newCanvas.freeDrawingBrush.color = brushColor;
 
-      fabric.Image.fromURL(uploadedImage, (img) => {
+      fabric.Image.fromURL(uploadedImage, (img: fabric.Image) => { // Khai báo kiểu fabric.Image cho img
         if (!img.width || !img.height) {
           console.error('Invalid image dimensions');
           return;
