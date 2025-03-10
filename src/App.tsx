@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Footer from './components/Footer';
 import UsageGuide from './components/UsageGuide';
-import md5 from 'js-md5'; // Thay crypto bằng js-md5
 
 // Define types
 type TabType = 'img2img' | 'text2img';
@@ -99,9 +98,9 @@ const checkImageQuality = (file: File): Promise<{ isValid: boolean; message: str
   });
 };
 
-// Hàm tạo MD5
-const createMD5 = () => {
-  return md5(`${Date.now()}`);
+// Hàm tạo request_id không trùng lặp
+const generateRequestId = () => {
+  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 };
 
 export default function CaslaQuartzImageGenerator() {
@@ -288,7 +287,7 @@ export default function CaslaQuartzImageGenerator() {
       const textureResourceId = await uploadImageToTensorArt(textureFilePath);
 
       const workflowData = {
-        request_id: createMD5(),
+        request_id: generateRequestId(), // Sử dụng generateRequestId thay cho createMD5
         templateId: WORKFLOW_TEMPLATE_ID,
         fields: [
           {
@@ -343,7 +342,7 @@ export default function CaslaQuartzImageGenerator() {
       const [width, height] = text2ImgSize.split('x').map(Number);
       const fullPrompt = `${prompt}, featuring ${text2imgSelectedProducts.join(', ')} quartz marble`;
       const txt2imgData = {
-        request_id: createMD5(),
+        request_id: generateRequestId(), // Sử dụng generateRequestId thay cho createMD5
         stages: [
           { type: 'INPUT_INITIALIZE', inputInitialize: { seed: -1, count: 1 } },
           {
