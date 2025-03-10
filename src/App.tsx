@@ -599,5 +599,3 @@ const CaslaQuartzImageGenerator: React.FC = () => {
     </div>
   );
 };
-
-export default CaslaQuartzImageGenerator;
