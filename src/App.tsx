@@ -61,13 +61,13 @@ export default function CaslaQuartzImageGenerator() {
           color: 'rgba(255, 0, 0, 0.5)',
         },
       });
-
-      fabric.Image.fromURL(uploadedImage, (img) => {
+  
+      fabric.Image.fromURL(uploadedImage, (img: fabric.Image) => {
         newCanvas.setWidth(img.width!);
         newCanvas.setHeight(img.height!);
         newCanvas.add(img);
       });
-
+  
       setCanvas(newCanvas);
     }
   }, [uploadedImage]);
