@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import fabric from 'fabric';
+import fabric from 'fabric'; // Named import từ fabric
 import Footer from './components/Footer';
 import UsageGuide from './components/UsageGuide';
 
@@ -51,7 +51,7 @@ const PRODUCT_IMAGE_MAP: { [key: string]: string } = {
   "C4255 Calacatta Extra": `${process.env.PUBLIC_URL}/product_images/C4255.jpg`,
 };
 
-export default function CaslaQuartzImageGenerator() {
+const CaslaQuartzImageGenerator: React.FC = () => {
   const [productCode, setProductCode] = useState<string>('');
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [generatedImages, setGeneratedImages] = useState<string[]>([]);
@@ -82,10 +82,7 @@ export default function CaslaQuartzImageGenerator() {
     Authorization: `Bearer ${process.env.REACT_APP_TENSOR_ART_API_KEY}`,
   };
 
-  const validateProductCode = (code: string): boolean => {
-    return PRODUCTS.includes(code);
-  };
-
+  // Khởi tạo canvas khi ảnh được upload
   useEffect(() => {
     if (uploadedImage && canvasRef.current && !canvas) {
       const newCanvas = new fabric.Canvas(canvasRef.current, {
@@ -96,10 +93,12 @@ export default function CaslaQuartzImageGenerator() {
       newCanvas.freeDrawingBrush.width = brushSize;
       newCanvas.freeDrawingBrush.color = brushColor;
 
-      fabric.Image.fromURL(uploadedImage, (img: fabric.Image) => {
-        if (!img.width || !img.height) return;
+      fabric.Image.fromURL(uploadedImage, (img) => {
+        if (!img.width || !img.height) {
+          console.error("Invalid image dimensions");
+          return;
+        }
         const scale = Math.min(1, 800 / img.width, 600 / img.height);
-        img.scale(scale);
         newCanvas.setWidth(img.width * scale);
         newCanvas.setHeight(img.height * scale);
         newCanvas.setBackgroundImage(img, newCanvas.renderAll.bind(newCanvas));
@@ -114,39 +113,52 @@ export default function CaslaQuartzImageGenerator() {
     }
   }, [uploadedImage]);
 
+  // Cập nhật brush settings khi thay đổi
   useEffect(() => {
     if (canvas) {
       canvas.freeDrawingBrush.width = brushSize;
       canvas.freeDrawingBrush.color = brushColor;
+      canvas.renderAll();
     }
   }, [brushSize, brushColor, canvas]);
 
+  // Lưu mask khi người dùng vẽ
   useEffect(() => {
     if (canvas) {
       const updateMask = () => {
-        const maskData = canvas.toDataURL({
-          format: 'png',
-          quality: 1,
-        });
+        const maskData = canvas.toDataURL({ format: 'png', quality: 1 });
         setMaskImage(maskData);
+        console.log("Mask updated:", maskData);
       };
-
       canvas.on('mouse:up', updateMask);
-      return () => {
-        canvas.off('mouse:up', updateMask);
-      };
+      return () => canvas.off('mouse:up', updateMask);
     }
   }, [canvas]);
 
-  const openModal = (imageUrl: string) => {
-    setModalImage(imageUrl);
-    setIsModalOpen(true);
+  const validateProductCode = (code: string): boolean => PRODUCTS.includes(code);
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const imageUrl = URL.createObjectURL(file);
+      setUploadedImage(imageUrl);
+      setError(null);
+      console.log("Image uploaded:", imageUrl);
+    }
   };
 
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setModalImage('');
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      const imageUrl = URL.createObjectURL(file);
+      setUploadedImage(imageUrl);
+      setError(null);
+      console.log("Image dropped:", imageUrl);
+    }
   };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => e.preventDefault();
 
   const uploadImageToTensorArt = async (imageData: string): Promise<string> => {
     const url = `${TENSOR_ART_API_URL}/resource/image`;
@@ -158,26 +170,21 @@ export default function CaslaQuartzImageGenerator() {
         body: JSON.stringify(payload),
       });
       const responseText = await response.text();
-      if (!response.ok) {
-        throw new Error(`POST failed: ${response.status} - ${responseText}`);
-      }
+      if (!response.ok) throw new Error(`Upload failed: ${response.status} - ${responseText}`);
       const resourceResponse = JSON.parse(responseText);
       const putUrl = resourceResponse.putUrl as string;
       const resourceId = resourceResponse.resourceId as string;
-      const putHeaders = (resourceResponse.headers as Record<string, string>) || { 'Content-Type': 'image/jpeg' };
-      if (!putUrl || !resourceId) {
-        throw new Error(`Invalid response: ${JSON.stringify(resourceResponse)}`);
-      }
+      const putHeaders = (resourceResponse.headers as Record<string, string>) || { 'Content-Type': 'image/png' };
+      if (!putUrl || !resourceId) throw new Error(`Invalid response: ${JSON.stringify(resourceResponse)}`);
+
       const imageBlob = await (await fetch(imageData)).blob();
       const putResponse = await fetch(putUrl, {
         method: 'PUT',
         headers: putHeaders,
         body: imageBlob,
       });
-      if (![200, 203].includes(putResponse.status)) {
-        throw new Error(`PUT failed: ${putResponse.status} - ${await putResponse.text()}`);
-      }
-      await new Promise((resolve) => setTimeout(resolve, 10000));
+      if (![200, 203].includes(putResponse.status)) throw new Error(`PUT failed: ${putResponse.status}`);
+      await new Promise(resolve => setTimeout(resolve, 10000));
       return resourceId;
     } catch (error) {
       console.error('Upload error:', error);
@@ -192,37 +199,10 @@ export default function CaslaQuartzImageGenerator() {
       const { status, successInfo, failedInfo } = response.data.job;
       if (status === 'SUCCESS') return successInfo.images[0].url;
       if (status === 'FAILED' || status === 'ERROR') throw new Error(failedInfo?.reason || 'Job failed');
-      await new Promise((resolve) => setTimeout(resolve, 5000));
+      await new Promise(resolve => setTimeout(resolve, 5000));
     }
     throw new Error('Job timed out after 3 minutes');
   };
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setUploadedImage(reader.result as string);
-        setError(null);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    const file = e.dataTransfer.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setUploadedImage(reader.result as string);
-        setError(null);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => e.preventDefault();
 
   const processImg2Img = async () => {
     if (!uploadedImage || !maskImage || !productCode) {
@@ -255,12 +235,7 @@ export default function CaslaQuartzImageGenerator() {
         },
       };
 
-      const response = await axios.post(
-        `${TENSOR_ART_API_URL}/jobs/workflow/template`,
-        workflowData,
-        { headers }
-      );
-
+      const response = await axios.post(`${TENSOR_ART_API_URL}/jobs/workflow/template`, workflowData, { headers });
       const jobId = response.data.job.id;
       const imageUrl = await pollJobStatus(jobId);
       setGeneratedImages([imageUrl]);
@@ -281,56 +256,26 @@ export default function CaslaQuartzImageGenerator() {
     let interval: NodeJS.Timeout;
     if (loading) {
       interval = setInterval(() => {
-        setProgress((prev) => Math.min(prev + 1, 100));
-        setCurrentQuote((prev) => (prev + 1) % quotes.length);
+        setProgress(prev => Math.min(prev + 1, 100));
+        setCurrentQuote(prev => (prev + 1) % quotes.length);
       }, 2000);
     }
     return () => clearInterval(interval);
   }, [loading]);
 
-  const productInputSection = (
-    <div className="product-selection">
-      <label htmlFor="productCode">Mã sản phẩm:</label>
-      <input
-        type="text"
-        id="productCode"
-        value={productCode}
-        onChange={(e) => setProductCode(e.target.value)}
-        placeholder="Nhập mã sản phẩm..."
-        list="productList"
-      />
-      <datalist id="productList">
-        {PRODUCTS.map((product, index) => (
-          <option key={index} value={product}>
-            {product}
-          </option>
-        ))}
-      </datalist>
-      {productCode && PRODUCT_IMAGE_MAP[productCode] && (
-        <div className="product-preview">
-          <img 
-            src={PRODUCT_IMAGE_MAP[productCode]} 
-            alt="Product Preview" 
-            className="product-image"
-          />
-        </div>
-      )}
-    </div>
-  );
+  const openModal = (imageUrl: string) => {
+    setModalImage(imageUrl);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setModalImage('');
+  };
 
   return (
     <div className="app-container">
-      <ToastContainer 
-        position="bottom-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-      />
+      <ToastContainer position="bottom-right" autoClose={3000} />
       <div className="overlay">
         <div className="content">
           <header className="header">
@@ -344,18 +289,42 @@ export default function CaslaQuartzImageGenerator() {
             <div className="input-area">
               <div className="dropzone" onDrop={handleDrop} onDragOver={handleDragOver}>
                 {uploadedImage ? (
-                  <canvas ref={canvasRef} id="mask-canvas" />
+                  <canvas ref={canvasRef} style={{ border: '1px solid #ccc' }} />
                 ) : (
                   <div onClick={() => document.getElementById('image-upload')?.click()}>
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 8v4m0 0l-4-4m4 4l4-4" />
                     </svg>
                     <p>Kéo thả hoặc nhấn để tải ảnh</p>
-                    <input type="file" id="image-upload" className="hidden" accept="image/*" onChange={handleImageUpload} />
+                    <input
+                      type="file"
+                      id="image-upload"
+                      className="hidden"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                    />
                   </div>
                 )}
               </div>
-              {productInputSection}
+              <div className="product-selection">
+                <label htmlFor="productCode">Mã sản phẩm:</label>
+                <input
+                  type="text"
+                  id="productCode"
+                  value={productCode}
+                  onChange={(e) => setProductCode(e.target.value)}
+                  placeholder="Nhập mã sản phẩm..."
+                  list="productList"
+                />
+                <datalist id="productList">
+                  {PRODUCTS.map((product, index) => (
+                    <option key={index} value={product} />
+                  ))}
+                </datalist>
+                {productCode && PRODUCT_IMAGE_MAP[productCode] && (
+                  <img src={PRODUCT_IMAGE_MAP[productCode]} alt="Product Preview" className="product-image" />
+                )}
+              </div>
               {canvas && (
                 <div className="brush-tools">
                   <label>Kích thước brush:</label>
@@ -384,45 +353,26 @@ export default function CaslaQuartzImageGenerator() {
             </div>
             <div className="output-area">
               {error ? (
-                <div className="error-message">
-                  <strong>Lỗi!</strong> <span>{error}</span>
-                </div>
+                <div className="error-message">{error}</div>
               ) : loading ? (
                 <div className="loading-container">
-                  <div className="spinner">
-                    <div></div>
-                  </div>
-                  <div className="progress-bar">
-                    <div
-                      className="progress-bar-fill"
-                      style={{ width: `${progress}%` }}
-                    ></div>
-                  </div>
-                  <p className="loading-text quote-text">{quotes[currentQuote]}</p>
-                  <p className="loading-text estimated-time">Thời gian chờ dự kiến: 1-2 phút</p>
+                  <div className="spinner" />
+                  <div className="progress-bar" style={{ width: `${progress}%` }} />
+                  <p>{quotes[currentQuote]}</p>
                 </div>
               ) : generatedImages.length > 0 ? (
                 <div className="generated-images-container">
                   {generatedImages.map((imageUrl, index) => (
-                    <div 
-                      key={index} 
-                      className="generated-image-wrapper"
-                      onClick={() => openModal(imageUrl)}
-                    >
-                      <img src={imageUrl} alt={`Generated ${index + 1}`} className="generated-image" />
-                      <a 
-                        href={imageUrl} 
-                        download={`generated_image_${index + 1}.png`} 
-                        className="download-button"
-                        onClick={e => e.stopPropagation()}
-                      >
-                        Tải ảnh {index + 1} về máy
+                    <div key={index} className="generated-image-wrapper" onClick={() => openModal(imageUrl)}>
+                      <img src={imageUrl} alt={`Generated ${index}`} className="generated-image" />
+                      <a href={imageUrl} download={`generated_${index}.png`} onClick={e => e.stopPropagation()}>
+                        Tải về
                       </a>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="output-placeholder">Ảnh sẽ hiển thị ở đây sau khi tạo</div>
+                <div className="output-placeholder">Ảnh sẽ hiển thị ở đây</div>
               )}
             </div>
           </div>
@@ -437,4 +387,6 @@ export default function CaslaQuartzImageGenerator() {
       )}
     </div>
   );
-}
+};
+
+export default CaslaQuartzImageGenerator;
