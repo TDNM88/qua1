@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import fabric from 'fabric';
+import { fabric } from 'fabric';
 import Footer from './components/Footer';
 import UsageGuide from './components/UsageGuide';
 
@@ -55,11 +55,6 @@ export default function CaslaQuartzImageGenerator() {
   const [productCode, setProductCode] = useState<string>('');
   const [activeTab, setActiveTab] = useState<TabType>('img2img');
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
-  const [position, setPosition] = useState<string>('floor');
-  const [isCustomPosition, setIsCustomPosition] = useState<boolean>(false);
-  const [img2imgSize, setImg2ImgSize] = useState<string>('1024x1024');
-  const [text2ImgSize, setText2ImgSize] = useState<string>('1024x1024');
-  const [prompt, setPrompt] = useState<string>('');
   const [generatedImages, setGeneratedImages] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -217,27 +212,9 @@ export default function CaslaQuartzImageGenerator() {
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => e.preventDefault();
 
-  const handlePositionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value;
-    if (value === 'custom') {
-      setIsCustomPosition(true);
-      setPosition('');
-    } else {
-      setIsCustomPosition(false);
-      setPosition(value);
-    }
-  };
-
-  const handleCustomPositionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    if (value.length <= 15) {
-      setPosition(value);
-    }
-  };
-
   const processImg2Img = async () => {
-    if (!uploadedImage || !maskImage || !position || !productCode) {
-      setError('Vui lòng tải ảnh, vẽ mask, chọn/nhập vị trí đặt đá và nhập mã sản phẩm.');
+    if (!uploadedImage || !maskImage || !productCode) {
+      setError('Vui lòng tải ảnh, vẽ mask và nhập mã sản phẩm.');
       return;
     }
     if (!validateProductCode(productCode)) {
@@ -251,10 +228,11 @@ export default function CaslaQuartzImageGenerator() {
     setError(null);
 
     try {
-      // Upload ảnh input từ người dùng
+      // Upload ảnh input từ người dùng (ảnh đã được tạo mask)
       const imageResourceId = await uploadImageToTensorArt(uploadedImage);
-      // Upload mask
-      const maskResourceId = await uploadImageToTensorArt(maskImage);
+      // Upload ảnh sản phẩm
+      const productImageUrl = PRODUCT_IMAGE_MAP[productCode];
+      const productImageResourceId = await uploadImageToTensorArt(productImageUrl);
 
       // Chuẩn bị dữ liệu cho workflow template
       const workflowData = {
@@ -263,24 +241,14 @@ export default function CaslaQuartzImageGenerator() {
         fields: {
           fieldAttrs: [
             {
-              nodeId: "731", // Node cho ảnh input
+              nodeId: "731", // Node cho ảnh đã được tạo mask
               fieldName: "image",
               fieldValue: imageResourceId,
             },
             {
-              nodeId: "734", // Node cho text (vị trí)
-              fieldName: "Text",
-              fieldValue: position.toLowerCase(),
-            },
-            {
-              nodeId: "735", // Node cho mask
+              nodeId: "735", // Node cho ảnh sản phẩm
               fieldName: "image",
-              fieldValue: maskResourceId,
-            },
-            {
-              nodeId: "736", // Node cho mã sản phẩm
-              fieldName: "Text",
-              fieldValue: productCode,
+              fieldValue: productImageResourceId,
             },
           ],
         },
@@ -463,34 +431,6 @@ export default function CaslaQuartzImageGenerator() {
                       </div>
                     )}
                   </div>
-                  <div>
-                    <label htmlFor="position">Vị trí đặt đá:</label>
-                    <select
-                      id="position"
-                      value={isCustomPosition ? 'custom' : position}
-                      onChange={handlePositionChange}
-                    >
-                      <option value="floor">Sàn nhà</option>
-                      <option value="wall">Tường</option>
-                      <option value="countertop">Mặt bàn</option>
-                      <option value="stair">Cầu thang</option>
-                      <option value="tabletop">Mặt bàn</option>
-                      <option value="backplash">Tường bếp</option>
-                      <option value="counter">Quầy bar</option>
-                      <option value="coffeetable">Bàn cafe</option>
-                      <option value="custom">Tùy chỉnh</option>
-                    </select>
-                    {isCustomPosition && (
-                      <input
-                        type="text"
-                        value={position}
-                        onChange={handleCustomPositionChange}
-                        placeholder="Nhập vị trí tùy chỉnh..."
-                        maxLength={30}
-                        className="custom-position-input"
-                      />
-                    )}
-                  </div>
                   {productInputSection}
                   <button
                     className="generate-button"
@@ -504,7 +444,7 @@ export default function CaslaQuartzImageGenerator() {
                     onClick={processImg2Img}
                     disabled={loading || !uploadedImage || !maskImage}
                   >
-                                        {loading ? 'Đang xử lý...' : 'Tạo ảnh'}
+                    {loading ? 'Đang xử lý...' : 'Tạo ảnh'}
                   </button>
                 </>
               )}
