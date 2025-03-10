@@ -266,8 +266,6 @@ export default function CaslaQuartzImageGenerator() {
             <UsageGuide />
             <div className="tab-buttons">
               <button
-                className={`tab-button ${activeTab ===</button>
-              <button
                 className={`tab-button ${activeTab === 'text2img' ? 'active' : ''}`}
                 onClick={() => switchTab('text2img')}
               >
