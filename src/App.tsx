@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Footer from './components/Footer';
 import UsageGuide from './components/UsageGuide';
-import * as protobuf from 'protobufjs'; // Đảm bảo protobufjs được cài đặt
+import * as protobuf from 'protobufjs';
 
 // Định nghĩa schema protobuf
 const workflowSchema = `
@@ -599,3 +599,5 @@ const CaslaQuartzImageGenerator: React.FC = () => {
     </div>
   );
 };
+
+export default CaslaQuartzImageGenerator;
