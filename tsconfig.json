@@ -4,8 +4,8 @@
   ],
   "compilerOptions": {
     "strict": true,
-    "esModuleInterop": true, // Bật esModuleInterop
-    "allowSyntheticDefaultImports": true, // Bật allowSyntheticDefaultImports
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "lib": ["dom", "es2015"],
     "jsx": "react-jsx"
   }
