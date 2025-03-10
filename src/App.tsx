@@ -5,7 +5,6 @@ import 'react-toastify/dist/ReactToastify.css';
 import fabric from 'fabric';
 import Footer from './components/Footer';
 import UsageGuide from './components/UsageGuide';
-const [productCode, setProductCode] = useState<string>('');
 
 // Định nghĩa kiểu dữ liệu
 type TabType = 'img2img' | 'text2img';
@@ -20,6 +19,7 @@ const createMD5 = () => {
 };
 
 export default function CaslaQuartzImageGenerator() {
+  const [productCode, setProductCode] = useState<string>('');
   const [activeTab, setActiveTab] = useState<TabType>('img2img');
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [position, setPosition] = useState<string>('floor');
