@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import fabric from 'fabric';
+import fabric from 'fabric'; // Default import
 import Footer from './components/Footer';
 import UsageGuide from './components/UsageGuide';
 
@@ -85,6 +85,12 @@ const App: React.FC = () => {
   // Khởi tạo canvas khi ảnh được upload
   useEffect(() => {
     if (uploadedImage && canvasRef.current && !canvas) {
+      // Kiểm tra xem fabric có chứa Canvas không
+      if (!fabric || !fabric.Canvas) {
+        console.error('Fabric Canvas is not available. Check fabric import and version.');
+        return;
+      }
+
       const newCanvas = new fabric.Canvas(canvasRef.current, {
         isDrawingMode: true,
         width: 800,
@@ -95,7 +101,7 @@ const App: React.FC = () => {
       newCanvas.freeDrawingBrush.width = brushSize;
       newCanvas.freeDrawingBrush.color = brushColor;
 
-      fabric.Image.fromURL(uploadedImage, (img: fabric.Image) => { // Khai báo kiểu fabric.Image cho img
+      fabric.Image.fromURL(uploadedImage, (img: fabric.Image) => {
         if (!img.width || !img.height) {
           console.error('Invalid image dimensions');
           return;
