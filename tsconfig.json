@@ -4,9 +4,9 @@
   ],
   "compilerOptions": {
     "strict": true,
-    "esModuleInterop": true,
+    "esModuleInterop": true, // Bật esModuleInterop
+    "allowSyntheticDefaultImports": true, // Bật allowSyntheticDefaultImports
     "lib": ["dom", "es2015"],
-    "jsx": "react-jsx",
-    "typeRoots": ["./node_modules/@types", "./src/types"] // Thêm đường dẫn đến thư mục chứa file khai báo kiểu
+    "jsx": "react-jsx"
   }
 }
