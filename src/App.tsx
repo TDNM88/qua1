@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -7,7 +7,7 @@ import Footer from './components/Footer';
 import UsageGuide from './components/UsageGuide';
 
 // Định nghĩa kiểu dữ liệu
-type TabType = 'img2img' | 'text2img';
+type TabType = 'img2img';
 
 // Cấu hình API TensorArt
 const TENSOR_ART_API_URL = "https://ap-east-1.tensorart.cloud/v1";
@@ -53,7 +53,6 @@ const PRODUCT_IMAGE_MAP: { [key: string]: string } = {
 
 export default function CaslaQuartzImageGenerator() {
   const [productCode, setProductCode] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<TabType>('img2img');
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [generatedImages, setGeneratedImages] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -64,6 +63,9 @@ export default function CaslaQuartzImageGenerator() {
   const [modalImage, setModalImage] = useState('');
   const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
   const [maskImage, setMaskImage] = useState<string | null>(null);
+  const [brushSize, setBrushSize] = useState<number>(10);
+  const [brushColor, setBrushColor] = useState<string>('rgba(255, 0, 0, 0.5)');
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const quotes = [
     "Đá thạch anh mang lại sự sang trọng và bền bỉ cho mọi không gian.",
@@ -86,12 +88,12 @@ export default function CaslaQuartzImageGenerator() {
 
   // Khởi tạo canvas khi ảnh được tải lên
   useEffect(() => {
-    if (uploadedImage) {
-      const newCanvas = new fabric.Canvas('mask-canvas', {
+    if (uploadedImage && canvasRef.current) {
+      const newCanvas = new fabric.Canvas(canvasRef.current, {
         isDrawingMode: true,
         freeDrawingBrush: {
-          width: 10,
-          color: 'rgba(255, 0, 0, 0.5)',
+          width: brushSize,
+          color: brushColor,
         },
       });
 
@@ -103,19 +105,25 @@ export default function CaslaQuartzImageGenerator() {
 
       setCanvas(newCanvas);
     }
-  }, [uploadedImage]);
+  }, [uploadedImage, brushSize, brushColor]);
 
-  // Lưu mask khi người dùng hoàn thành vẽ
-  const saveMask = () => {
+  // Tự động lưu mask khi người dùng vẽ
+  useEffect(() => {
     if (canvas) {
-      const maskData = canvas.toDataURL({
-        format: 'png',
-        quality: 1,
-      });
-      setMaskImage(maskData);
-      toast.success('Mask đã được lưu!');
+      const handleMouseUp = () => {
+        const maskData = canvas.toDataURL({
+          format: 'png',
+          quality: 1,
+        });
+        setMaskImage(maskData);
+      };
+
+      canvas.on('mouse:up', handleMouseUp);
+      return () => {
+        canvas.off('mouse:up', handleMouseUp);
+      };
     }
-  };
+  }, [canvas]);
 
   // Mở modal hiển thị ảnh lớn
   const openModal = (imageUrl: string) => {
@@ -176,13 +184,6 @@ export default function CaslaQuartzImageGenerator() {
       await new Promise((resolve) => setTimeout(resolve, 5000));
     }
     throw new Error('Job timed out after 3 minutes');
-  };
-
-  const switchTab = (tab: TabType) => {
-    setActiveTab(tab);
-    setGeneratedImages([]);
-    setLoading(false);
-    setError(null);
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -277,63 +278,6 @@ export default function CaslaQuartzImageGenerator() {
     }
   };
 
-  const processText2Img = async () => {
-    if (!prompt || !productCode) {
-      setError('Vui lòng nhập mô tả và mã sản phẩm.');
-      return;
-    }
-    if (!validateProductCode(productCode)) {
-      setError('Mã sản phẩm không hợp lệ. Vui lòng chọn từ danh sách sản phẩm.');
-      return;
-    }
-    setGeneratedImages([]);
-    setProgress(0);
-    setCurrentQuote(0);
-    setLoading(true);
-    setError(null);
-    try {
-      const [width, height] = text2ImgSize.split('x').map(Number);
-      const fullPrompt = `${prompt}, featuring quartz marble, product code: ${productCode}`;
-      const txt2imgData = {
-        request_id: createMD5(),
-        stages: [
-          { type: 'INPUT_INITIALIZE', inputInitialize: { seed: -1, count: 1 } },
-          {
-            type: 'DIFFUSION',
-            diffusion: {
-              width,
-              height,
-              prompts: [{ text: fullPrompt }],
-              negativePrompts: [{ text: ' ' }],
-              sdModel: '779398605850080514',
-              sdVae: 'ae.sft',
-              sampler: 'Euler a',
-              steps: 30,
-              cfgScale: 8,
-              clipSkip: 1,
-              etaNoiseSeedDelta: 31337,
-            },
-          },
-        ],
-      };
-      const response = await axios.post(`${TENSOR_ART_API_URL}/jobs`, txt2imgData, { headers });
-      const jobId = response.data.job.id;
-      const imageUrl = await pollJobStatus(jobId);
-      setGeneratedImages([imageUrl]); // Chỉ tạo một ảnh cho text2img
-      toast.success('Tạo ảnh thành công!');
-    } catch (err: unknown) {
-      if (axios.isAxiosError(err) && err.response) {
-        setError(`Lỗi từ server: ${err.response.data.message || err.message}`);
-      } else {
-        setError(`Có lỗi xảy ra khi tạo ảnh: ${(err as Error).message}`);
-      }
-      console.error(err);
-      toast.error('Có lỗi xảy ra khi tạo ảnh');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (loading) {
@@ -399,84 +343,46 @@ export default function CaslaQuartzImageGenerator() {
           </header>
           <div className="tab-container">
             <UsageGuide />
-            <div className="tab-buttons">
-              <button
-                className={`tab-button ${activeTab === 'img2img' ? 'active' : ''}`}
-                onClick={() => switchTab('img2img')}
-              >
-                Tạo Ảnh CaslaQuartz Cùng Công Trình Có Sẵn
-              </button>
-              <button
-                className={`tab-button ${activeTab === 'text2img' ? 'active' : ''}`}
-                onClick={() => switchTab('text2img')}
-              >
-                Tạo Ảnh CaslaQuartz Từ Mô Tả Của Bạn
-              </button>
-            </div>
           </div>
           <div className="grid-container">
             <div className="input-area">
-              {activeTab === 'img2img' && (
-                <>
-                  <div className="dropzone" onDrop={handleDrop} onDragOver={handleDragOver}>
-                    {uploadedImage ? (
-                      <canvas id="mask-canvas" />
-                    ) : (
-                      <div onClick={() => document.getElementById('image-upload')?.click()}>
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 8v4m0 0l-4-4m4 4l4-4" />
-                        </svg>
-                        <p>Kéo thả hoặc nhấn để tải ảnh</p>
-                        <input type="file" id="image-upload" className="hidden" accept="image/*" onChange={handleImageUpload} />
-                      </div>
-                    )}
+              <div className="dropzone" onDrop={handleDrop} onDragOver={handleDragOver}>
+                {uploadedImage ? (
+                  <canvas ref={canvasRef} id="mask-canvas" />
+                ) : (
+                  <div onClick={() => document.getElementById('image-upload')?.click()}>
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 8v4m0 0l-4-4m4 4l4-4" />
+                    </svg>
+                    <p>Kéo thả hoặc nhấn để tải ảnh</p>
+                    <input type="file" id="image-upload" className="hidden" accept="image/*" onChange={handleImageUpload} />
                   </div>
-                  {productInputSection}
-                  <button
-                    className="generate-button"
-                    onClick={saveMask}
-                    disabled={!uploadedImage}
-                  >
-                    Lưu Mask
-                  </button>
-                  <button
-                    className="generate-button"
-                    onClick={processImg2Img}
-                    disabled={loading || !uploadedImage || !maskImage}
-                  >
-                    {loading ? 'Đang xử lý...' : 'Tạo ảnh'}
-                  </button>
-                </>
-              )}
-              {activeTab === 'text2img' && (
-                <>
-                  <div>
-                    <label htmlFor="prompt">Mô tả của bạn:</label>
-                    <textarea
-                      id="prompt"
-                      placeholder="Nhập mô tả chi tiết..."
-                      value={prompt}
-                      onChange={(e) => setPrompt(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="size-text2img">Kích thước:</label>
-                    <select id="size-text2img" value={text2ImgSize} onChange={(e) => setText2ImgSize(e.target.value)}>
-                      <option value="1024x1024">1024x1024</option>
-                      <option value="768x512">768x512</option>
-                      <option value="512x768">512x768</option>
-                    </select>
-                  </div>
-                  {productInputSection}
-                  <button
-                    className="generate-button"
-                    onClick={processText2Img}
-                    disabled={loading || !prompt}
-                  >
-                    {loading ? 'Đang xử lý...' : 'Tạo ảnh'}
-                  </button>
-                </>
-              )}
+                )}
+              </div>
+              {productInputSection}
+              <div className="brush-tools">
+                <label>Kích thước brush:</label>
+                <input
+                  type="range"
+                  min="1"
+                  max="50"
+                  value={brushSize}
+                  onChange={(e) => setBrushSize(Number(e.target.value))}
+                />
+                <label>Màu brush:</label>
+                <input
+                  type="color"
+                  value={brushColor}
+                  onChange={(e) => setBrushColor(e.target.value)}
+                />
+              </div>
+              <button
+                className="generate-button"
+                onClick={processImg2Img}
+                disabled={loading || !uploadedImage || !maskImage}
+              >
+                {loading ? 'Đang xử lý...' : 'Tạo ảnh'}
+              </button>
             </div>
             <div className="output-area">
               {(() => {
