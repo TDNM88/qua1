@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import * as fabric from 'fabric'; // Sử dụng named import để đảm bảo tất cả thành phần được import
+import fabric from 'fabric'; // Sử dụng default import
 import Footer from './components/Footer';
 import UsageGuide from './components/UsageGuide';
 
@@ -86,6 +86,13 @@ const App: React.FC = () => {
   useEffect(() => {
     if (uploadedImage && canvasRef.current && !canvas) {
       console.log('Initializing canvas with image:', uploadedImage);
+
+      // Kiểm tra xem fabric.Canvas có tồn tại không
+      if (!fabric || typeof fabric.Canvas !== 'function') {
+        console.error('Fabric Canvas is not available. Check fabric import and version.');
+        setError('Thư viện Fabric không hoạt động. Vui lòng kiểm tra phiên bản hoặc tải lại trang.');
+        return;
+      }
 
       // Khởi tạo canvas
       const newCanvas = new fabric.Canvas(canvasRef.current, {
