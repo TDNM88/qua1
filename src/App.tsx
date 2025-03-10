@@ -56,11 +56,6 @@ const PRODUCT_IMAGE_MAP: { [key: string]: string } = {
   "C4255 Calacatta Extra": `${process.env.PUBLIC_URL}/product_images/C4255.jpg`,
 };
 
-// Hàm tạo request_id ngẫu nhiên
-const createMD5 = () => {
-  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-};
-
 export default function CaslaQuartzImageGenerator() {
   const [productCode, setProductCode] = useState<string>('');
   const [activeTab, setActiveTab] = useState<TabType>('img2img');
