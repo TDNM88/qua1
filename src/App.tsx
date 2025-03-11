@@ -60,13 +60,14 @@ const App: React.FC = () => {
   const [currentQuote, setCurrentQuote] = useState<number>(0);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [modalImage, setModalImage] = useState<string>('');
-  const [maskImage, setMaskImage] = useState<string | null>(null);
+  const [maskedImageUrl, setMaskedImageUrl] = useState<string | null>(null); // Thay thế maskImage
   const [brushSize, setBrushSize] = useState<number>(10);
-  const [brushColor, setBrushColor] = useState<string>('#ff0000');
+  const [brushColor, setBrushColor] = useState<string>('rgba(255, 0, 0, 0.5)');
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const drawingRef = useRef<boolean>(false);
+  const maskCanvasRef = useRef<HTMLCanvasElement>(null);
+  const imageRef = useRef<HTMLImageElement>(null);
+  const [isDrawing, setIsDrawing] = useState<boolean>(false);
   const lastPosRef = useRef<{ x: number; y: number } | null>(null);
-  const imageRef = useRef<HTMLImageElement | null>(null);
 
   const quotes = [
     "Đá thạch anh mang lại sự sang trọng và bền bỉ cho mọi không gian.",
@@ -85,36 +86,39 @@ const App: React.FC = () => {
 
   // Khởi tạo canvas và vẽ ảnh khi upload
   useEffect(() => {
-    if (uploadedImage && canvasRef.current) {
+    if (uploadedImage && canvasRef.current && maskCanvasRef.current && imageRef.current) {
       console.log('Initializing canvas with image:', uploadedImage);
 
       const canvas = canvasRef.current;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        console.error('Cannot get 2D context for canvas');
-        setError('Không thể khởi tạo canvas. Vui lòng thử lại.');
-        return;
-      }
-
-      // Tạo một hình ảnh để load ảnh upload
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
+      const maskCanvas = maskCanvasRef.current;
+      const img = imageRef.current;
       img.src = uploadedImage;
 
       img.onload = () => {
-        // Điều chỉnh kích thước canvas để vừa với ảnh
-        const scale = Math.min(1, 800 / img.width, 600 / img.height);
-        canvas.width = img.width * scale;
-        canvas.height = img.height * scale;
+        const maxWidth = 500;
+        const maxHeight = 500;
+        let width = img.width;
+        let height = img.height;
 
-        // Vẽ ảnh lên canvas
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        imageRef.current = img;
-        console.log('Image loaded and drawn on canvas:', canvas.width, canvas.height);
+        if (width > maxWidth) {
+          height *= maxWidth / width;
+          width = maxWidth;
+        }
+        if (height > maxHeight) {
+          width *= maxHeight / height;
+          height = maxHeight;
+        }
 
-        // Cập nhật mask lần đầu
-        const maskData = canvas.toDataURL('image/png');
-        setMaskImage(maskData);
+        canvas.width = width;
+        canvas.height = height;
+        maskCanvas.width = width;
+        maskCanvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          console.log('Image loaded and drawn on canvas:', width, height);
+        }
       };
 
       img.onerror = () => {
@@ -124,55 +128,83 @@ const App: React.FC = () => {
     }
   }, [uploadedImage]);
 
-  // Xử lý sự kiện vẽ trên canvas
-  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    drawingRef.current = true;
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    lastPosRef.current = { x, y };
+  // Xử lý vẽ mask
+  const handleMaskMouseDown = (event: React.MouseEvent<HTMLCanvasElement>) => {
+    setIsDrawing(true);
+    drawMask(event);
   };
 
-  const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!drawingRef.current) return;
-
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext('2d');
-    if (!canvas || !ctx) return;
-
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    ctx.beginPath();
-    ctx.moveTo(lastPosRef.current?.x || x, lastPosRef.current?.y || y);
-    ctx.lineTo(x, y);
-    ctx.strokeStyle = brushColor;
-    ctx.lineWidth = brushSize;
-    ctx.lineCap = 'round';
-    ctx.stroke();
-
-    lastPosRef.current = { x, y };
-
-    // Cập nhật mask
-    const maskData = canvas.toDataURL('image/png');
-    setMaskImage(maskData);
+  const handleMaskMouseMove = (event: React.MouseEvent<HTMLCanvasElement>) => {
+    if (isDrawing) drawMask(event);
   };
 
-  const stopDrawing = () => {
-    drawingRef.current = false;
+  const handleMaskMouseUp = () => {
+    setIsDrawing(false);
     lastPosRef.current = null;
+  };
 
-    // Cập nhật mask sau khi dừng vẽ
+  const handleMaskMouseLeave = () => {
+    setIsDrawing(false);
+    lastPosRef.current = null;
+  };
+
+  const drawMask = (event: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!maskCanvasRef.current) return;
+
+    const maskCanvas = maskCanvasRef.current;
+    const maskCtx = maskCanvas.getContext('2d');
+    if (!maskCtx) return;
+
+    const canvasRect = maskCanvas.getBoundingClientRect();
+    const x = event.clientX - canvasRect.left;
+    const y = event.clientY - canvasRect.top;
+
+    maskCtx.fillStyle = brushColor;
+    maskCtx.beginPath();
+    maskCtx.arc(x, y, brushSize / 2, 0, 2 * Math.PI); // Chia brushSize cho 2 để tương thích với kích thước thực tế
+    maskCtx.fill();
+
+    // Cập nhật maskedImageUrl khi vẽ
+    applyMask();
+  };
+
+  const clearMask = () => {
+    if (!maskCanvasRef.current) return;
+    const maskCtx = maskCanvasRef.current.getContext('2d');
+    if (!maskCtx) return;
+
+    maskCtx.clearRect(0, 0, maskCanvasRef.current.width, maskCanvasRef.current.height);
+    applyMask(); // Cập nhật lại maskedImageUrl sau khi clear
+  };
+
+  const applyMask = () => {
+    if (!canvasRef.current || !maskCanvasRef.current || !imageRef.current) return;
+
     const canvas = canvasRef.current;
-    if (canvas) {
-      const maskData = canvas.toDataURL('image/png');
-      setMaskImage(maskData);
-      console.log('Mask updated:', maskData);
-    }
+    const maskCanvas = maskCanvasRef.current;
+    const ctx = canvas.getContext('2d');
+    const maskCtx = maskCanvas.getContext('2d');
+
+    if (!ctx || !maskCtx) return;
+
+    const width = canvas.width;
+    const height = canvas.height;
+
+    const compositeCanvas = document.createElement('canvas');
+    compositeCanvas.width = width;
+    compositeCanvas.height = height;
+    const compositeCtx = compositeCanvas.getContext('2d');
+
+    if (!compositeCtx) return;
+
+    // Vẽ ảnh gốc
+    compositeCtx.drawImage(imageRef.current, 0, 0, width, height);
+    // Áp dụng mask với composite operation 'source-in'
+    compositeCtx.globalCompositeOperation = 'source-in';
+    compositeCtx.drawImage(maskCanvas, 0, 0);
+
+    // Cập nhật maskedImageUrl
+    setMaskedImageUrl(compositeCanvas.toDataURL());
   };
 
   const validateProductCode = (code: string): boolean => PRODUCTS.includes(code);
@@ -180,10 +212,12 @@ const App: React.FC = () => {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      setUploadedImage(imageUrl);
-      setError(null);
-      console.log('Image uploaded:', imageUrl);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setUploadedImage(reader.result as string);
+        setMaskedImageUrl(null); // Reset khi upload ảnh mới
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -191,10 +225,12 @@ const App: React.FC = () => {
     e.preventDefault();
     const file = e.dataTransfer.files[0];
     if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      setUploadedImage(imageUrl);
-      setError(null);
-      console.log('Image dropped:', imageUrl);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setUploadedImage(reader.result as string);
+        setMaskedImageUrl(null); // Reset khi drop ảnh mới
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -242,7 +278,7 @@ const App: React.FC = () => {
   };
 
   const processImg2Img = async () => {
-    if (!uploadedImage || !maskImage || !productCode) {
+    if (!uploadedImage || !maskedImageUrl || !productCode) {
       setError('Vui lòng tải ảnh, vẽ mask và chọn mã sản phẩm.');
       return;
     }
@@ -258,8 +294,8 @@ const App: React.FC = () => {
     setError(null);
 
     try {
-      console.log('Processing with:', { maskImage, productCode });
-      const imageResourceId = await uploadImageToTensorArt(maskImage);
+      console.log('Processing with:', { maskedImageUrl, productCode });
+      const imageResourceId = await uploadImageToTensorArt(maskedImageUrl);
       const productImageResourceId = await uploadImageToTensorArt(PRODUCT_IMAGE_MAP[productCode]);
 
       const workflowData = {
@@ -326,29 +362,85 @@ const App: React.FC = () => {
           </div>
           <div className="grid-container">
             <div className="input-area">
-              <div className="dropzone" onDrop={handleDrop} onDragOver={handleDragOver}>
-                {uploadedImage ? (
-                  <canvas
-                    ref={canvasRef}
-                    id="mask-canvas"
-                    onMouseDown={startDrawing}
-                    onMouseMove={draw}
-                    onMouseUp={stopDrawing}
-                    onMouseOut={stopDrawing}
+              <div className="flex flex-col items-center p-8 bg-gray-50 rounded-2xl shadow-lg space-y-6 font-sans">
+                <h2 className="text-3xl font-semibold text-gray-800 mb-4">Image Masking Tool</h2>
+
+                <div className="flex items-center space-x-4">
+                  <label htmlFor="image-upload" className="px-5 py-3 bg-indigo-600 text-white rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 font-medium cursor-pointer transition-colors duration-200">
+                    Upload Image
+                  </label>
+                  <input
+                    type="file"
+                    id="image-upload"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
                   />
-                ) : (
-                  <div onClick={() => document.getElementById('image-upload')?.click()}>
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 8v4m0 0l-4-4m4 4l4-4" />
-                    </svg>
-                    <p>Kéo thả hoặc nhấn để tải ảnh</p>
-                    <input
-                      type="file"
-                      id="image-upload"
-                      className="hidden"
-                      accept="image/*"
-                      onChange={handleImageUpload}
+
+                  <button
+                    onClick={clearMask}
+                    className="px-5 py-3 bg-red-500 text-white rounded-lg shadow-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-400 font-medium transition-colors duration-200"
+                  >
+                    Clear Mask
+                  </button>
+
+                  <input
+                    type="range"
+                    min="5"
+                    max="50"
+                    value={brushSize}
+                    onChange={(e) => setBrushSize(parseInt(e.target.value))}
+                    className="w-24 h-1.5 rounded-full bg-gray-300 appearance-none cursor-pointer"
+                  />
+                  <span className="text-sm text-gray-600">Brush Size: {brushSize}</span>
+
+                  <input
+                    type="color"
+                    value={brushColor}
+                    onChange={(e) => setBrushColor(e.target.value)}
+                    className="w-10 h-10 rounded-full cursor-pointer"
+                  />
+                </div>
+
+                {uploadedImage ? (
+                  <div className="relative">
+                    <canvas
+                      ref={canvasRef}
+                      className="border border-gray-300 rounded-xl shadow-sm"
                     />
+                    <canvas
+                      ref={maskCanvasRef}
+                      className="absolute top-0 left-0 rounded-xl pointer-events-auto"
+                      style={{ opacity: 0.5 }}
+                      onMouseDown={handleMaskMouseDown}
+                      onMouseMove={handleMaskMouseMove}
+                      onMouseUp={handleMaskMouseUp}
+                      onMouseLeave={handleMaskMouseLeave}
+                    />
+                    <img ref={imageRef} src={uploadedImage} alt="Uploaded" className="hidden" />
+                  </div>
+                ) : (
+                  <div
+                    className="flex flex-col items-center justify-center bg-gray-100 border-2 border-dashed border-gray-400 rounded-2xl p-8 text-gray-500 space-y-2"
+                    onDrop={handleDrop}
+                    onDragOver={handleDragOver}
+                    onClick={() => document.getElementById('image-upload')?.click()}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth="1.5"
+                      stroke="currentColor"
+                      className="w-8 h-8"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.125-8.419m11.25 8.419a4.5 4.5 0 00-1.124-8.419"
+                      />
+                    </svg>
+                    <span className="text-lg">Upload or drop an image to start masking.</span>
                   </div>
                 )}
               </div>
@@ -373,28 +465,10 @@ const App: React.FC = () => {
                   </div>
                 )}
               </div>
-              {uploadedImage && (
-                <div className="brush-tools">
-                  <label>Kích thước brush:</label>
-                  <input
-                    type="range"
-                    min="1"
-                    max="50"
-                    value={brushSize}
-                    onChange={(e) => setBrushSize(Number(e.target.value))}
-                  />
-                  <label>Màu brush:</label>
-                  <input
-                    type="color"
-                    value={brushColor}
-                    onChange={(e) => setBrushColor(e.target.value)}
-                  />
-                </div>
-              )}
               <button
                 className="generate-button"
                 onClick={processImg2Img}
-                disabled={loading || !uploadedImage || !maskImage || !productCode}
+                disabled={loading || !uploadedImage || !maskedImageUrl || !productCode}
               >
                 {loading ? 'Đang xử lý...' : 'Tạo ảnh'}
               </button>
@@ -430,6 +504,11 @@ const App: React.FC = () => {
                       </a>
                     </div>
                   ))}
+                </div>
+              ) : maskedImageUrl ? (
+                <div className="flex flex-col items-center space-y-2">
+                  <h3 className="text-xl font-semibold text-gray-700">Masked Image</h3>
+                  <img src={maskedImageUrl} alt="Masked" className="rounded-xl shadow-md border border-gray-300" style={{ maxWidth: '500px' }} />
                 </div>
               ) : (
                 <div className="output-placeholder">Ảnh sẽ hiển thị ở đây sau khi tạo</div>
