@@ -60,7 +60,7 @@ const App: React.FC = () => {
   const [currentQuote, setCurrentQuote] = useState<number>(0);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [modalImage, setModalImage] = useState<string>('');
-  const [maskedImageUrl, setMaskedImageUrl] = useState<string | null>(null); // Thay thế maskImage
+  const [maskedImageUrl, setMaskedImageUrl] = useState<string | null>(null);
   const [brushSize, setBrushSize] = useState<number>(10);
   const [brushColor, setBrushColor] = useState<string>('rgba(255, 0, 0, 0.5)');
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -87,8 +87,6 @@ const App: React.FC = () => {
   // Khởi tạo canvas và vẽ ảnh khi upload
   useEffect(() => {
     if (uploadedImage && canvasRef.current && maskCanvasRef.current && imageRef.current) {
-      console.log('Initializing canvas with image:', uploadedImage);
-
       const canvas = canvasRef.current;
       const maskCanvas = maskCanvasRef.current;
       const img = imageRef.current;
@@ -117,12 +115,10 @@ const App: React.FC = () => {
         const ctx = canvas.getContext('2d');
         if (ctx) {
           ctx.drawImage(img, 0, 0, width, height);
-          console.log('Image loaded and drawn on canvas:', width, height);
         }
       };
 
       img.onerror = () => {
-        console.error('Failed to load image');
         setError('Không thể tải ảnh. Vui lòng chọn ảnh khác.');
       };
     }
@@ -161,10 +157,9 @@ const App: React.FC = () => {
 
     maskCtx.fillStyle = brushColor;
     maskCtx.beginPath();
-    maskCtx.arc(x, y, brushSize / 2, 0, 2 * Math.PI); // Chia brushSize cho 2 để tương thích với kích thước thực tế
+    maskCtx.arc(x, y, brushSize / 2, 0, 2 * Math.PI);
     maskCtx.fill();
 
-    // Cập nhật maskedImageUrl khi vẽ
     applyMask();
   };
 
@@ -174,7 +169,7 @@ const App: React.FC = () => {
     if (!maskCtx) return;
 
     maskCtx.clearRect(0, 0, maskCanvasRef.current.width, maskCanvasRef.current.height);
-    applyMask(); // Cập nhật lại maskedImageUrl sau khi clear
+    applyMask();
   };
 
   const applyMask = () => {
@@ -197,13 +192,10 @@ const App: React.FC = () => {
 
     if (!compositeCtx) return;
 
-    // Vẽ ảnh gốc
     compositeCtx.drawImage(imageRef.current, 0, 0, width, height);
-    // Áp dụng mask với composite operation 'source-in'
     compositeCtx.globalCompositeOperation = 'source-in';
     compositeCtx.drawImage(maskCanvas, 0, 0);
 
-    // Cập nhật maskedImageUrl
     setMaskedImageUrl(compositeCanvas.toDataURL());
   };
 
@@ -215,7 +207,7 @@ const App: React.FC = () => {
       const reader = new FileReader();
       reader.onloadend = () => {
         setUploadedImage(reader.result as string);
-        setMaskedImageUrl(null); // Reset khi upload ảnh mới
+        setMaskedImageUrl(null);
       };
       reader.readAsDataURL(file);
     }
@@ -228,7 +220,7 @@ const App: React.FC = () => {
       const reader = new FileReader();
       reader.onloadend = () => {
         setUploadedImage(reader.result as string);
-        setMaskedImageUrl(null); // Reset khi drop ảnh mới
+        setMaskedImageUrl(null);
       };
       reader.readAsDataURL(file);
     }
@@ -294,7 +286,6 @@ const App: React.FC = () => {
     setError(null);
 
     try {
-      console.log('Processing with:', { maskedImageUrl, productCode });
       const imageResourceId = await uploadImageToTensorArt(maskedImageUrl);
       const productImageResourceId = await uploadImageToTensorArt(PRODUCT_IMAGE_MAP[productCode]);
 
@@ -314,14 +305,12 @@ const App: React.FC = () => {
       const imageUrl = await pollJobStatus(jobId);
       setGeneratedImages([imageUrl]);
       toast.success('Tạo ảnh thành công!');
-      console.log('Generated image:', imageUrl);
     } catch (err) {
       const errorMessage = axios.isAxiosError(err) && err.response
         ? `Lỗi từ server: ${err.response.data.message || err.message}`
         : `Có lỗi xảy ra: ${(err as Error).message}`;
       setError(errorMessage);
       toast.error('Có lỗi khi tạo ảnh');
-      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -349,24 +338,23 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="app-container">
+    <div className="app-container min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
       <ToastContainer position="bottom-right" autoClose={3000} hideProgressBar={false} />
-      <div className="overlay">
-        <div className="content">
-          <header className="header">
-            <img src={`${process.env.PUBLIC_URL}/logo.png`} alt="Casla Quartz Logo" />
-            <h1>Đưa Kiệt Tác Vào Công Trình Của Bạn!</h1>
+      <div className="overlay bg-black/40 backdrop-blur-sm min-h-screen w-full flex items-center justify-center">
+        <div className="content bg-white/90 rounded-2xl shadow-2xl p-8 max-w-5xl w-full mx-4">
+          <header className="header bg-gradient-to-r from-indigo-600 to-blue-500 p-6 rounded-t-2xl text-white flex items-center justify-center gap-4">
+            <img src={`${process.env.PUBLIC_URL}/logo.png`} alt="Casla Quartz Logo" className="h-16 transition-transform duration-300 hover:scale-110" />
+            <h1 className="text-3xl font-bold">Đưa Kiệt Tác Vào Công Trình Của Bạn!</h1>
           </header>
-          <div className="tab-container">
+          <div className="tab-container py-6">
             <UsageGuide />
           </div>
-          <div className="grid-container">
-            <div className="input-area">
-              <div className="flex flex-col items-center p-8 bg-gray-50 rounded-2xl shadow-lg space-y-6 font-sans">
-                <h2 className="text-3xl font-semibold text-gray-800 mb-4">Image Masking Tool</h2>
-
-                <div className="flex items-center space-x-4">
-                  <label htmlFor="image-upload" className="px-5 py-3 bg-indigo-600 text-white rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 font-medium cursor-pointer transition-colors duration-200">
+          <div className="grid-container grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="input-area space-y-6">
+              <div className="canvas-container bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-lg p-6 border border-gray-100 overflow-hidden">
+                <h2 className="text-2xl font-semibold text-gray-800 mb-4 text-center">Image Masking Studio</h2>
+                <div className="tool-bar flex flex-wrap items-center justify-between gap-4 mb-6">
+                  <label htmlFor="image-upload" className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-blue-500 text-white rounded-xl shadow-md hover:from-indigo-700 hover:to-blue-600 transition-all duration-300 cursor-pointer">
                     Upload Image
                   </label>
                   <input
@@ -376,41 +364,39 @@ const App: React.FC = () => {
                     onChange={handleImageUpload}
                     className="hidden"
                   />
-
                   <button
                     onClick={clearMask}
-                    className="px-5 py-3 bg-red-500 text-white rounded-lg shadow-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-400 font-medium transition-colors duration-200"
+                    className="px-6 py-3 bg-gradient-to-r from-red-500 to-rose-500 text-white rounded-xl shadow-md hover:from-red-600 hover:to-rose-600 transition-all duration-300"
                   >
                     Clear Mask
                   </button>
-
-                  <input
-                    type="range"
-                    min="5"
-                    max="50"
-                    value={brushSize}
-                    onChange={(e) => setBrushSize(parseInt(e.target.value))}
-                    className="w-24 h-1.5 rounded-full bg-gray-300 appearance-none cursor-pointer"
-                  />
-                  <span className="text-sm text-gray-600">Brush Size: {brushSize}</span>
-
-                  <input
-                    type="color"
-                    value={brushColor}
-                    onChange={(e) => setBrushColor(e.target.value)}
-                    className="w-10 h-10 rounded-full cursor-pointer"
-                  />
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="range"
+                      min="5"
+                      max="50"
+                      value={brushSize}
+                      onChange={(e) => setBrushSize(parseInt(e.target.value))}
+                      className="w-24 h-2 bg-gray-200 rounded-lg cursor-pointer accent-indigo-600 transition-all duration-300"
+                    />
+                    <span className="text-sm text-gray-600 font-medium">Size: {brushSize}</span>
+                    <input
+                      type="color"
+                      value={brushColor}
+                      onChange={(e) => setBrushColor(e.target.value)}
+                      className="w-10 h-10 rounded-full border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all duration-300"
+                    />
+                  </div>
                 </div>
-
                 {uploadedImage ? (
-                  <div className="relative">
+                  <div className="relative canvas-wrapper group">
                     <canvas
                       ref={canvasRef}
-                      className="border border-gray-300 rounded-xl shadow-sm"
+                      className="w-full h-auto rounded-xl border-2 border-gray-100 shadow-inner"
                     />
                     <canvas
                       ref={maskCanvasRef}
-                      className="absolute top-0 left-0 rounded-xl pointer-events-auto"
+                      className="absolute top-0 left-0 w-full h-auto rounded-xl pointer-events-auto transition-opacity duration-300 group-hover:opacity-70"
                       style={{ opacity: 0.5 }}
                       onMouseDown={handleMaskMouseDown}
                       onMouseMove={handleMaskMouseMove}
@@ -418,10 +404,13 @@ const App: React.FC = () => {
                       onMouseLeave={handleMaskMouseLeave}
                     />
                     <img ref={imageRef} src={uploadedImage} alt="Uploaded" className="hidden" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-transparent to-gray-900/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                      <span className="text-white text-sm font-medium">Vẽ để tạo mask...</span>
+                    </div>
                   </div>
                 ) : (
                   <div
-                    className="flex flex-col items-center justify-center bg-gray-100 border-2 border-dashed border-gray-400 rounded-2xl p-8 text-gray-500 space-y-2"
+                    className="flex flex-col items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-dashed border-indigo-200 rounded-2xl p-8 text-gray-600 hover:border-indigo-400 transition-all duration-300 cursor-pointer"
                     onDrop={handleDrop}
                     onDragOver={handleDragOver}
                     onClick={() => document.getElementById('image-upload')?.click()}
@@ -432,7 +421,7 @@ const App: React.FC = () => {
                       viewBox="0 0 24 24"
                       strokeWidth="1.5"
                       stroke="currentColor"
-                      className="w-8 h-8"
+                      className="w-12 h-12 text-indigo-500"
                     >
                       <path
                         strokeLinecap="round"
@@ -440,12 +429,13 @@ const App: React.FC = () => {
                         d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.125-8.419m11.25 8.419a4.5 4.5 0 00-1.124-8.419"
                       />
                     </svg>
-                    <span className="text-lg">Upload or drop an image to start masking.</span>
+                    <span className="text-lg font-medium mt-2">Kéo thả hoặc nhấn để tải ảnh</span>
+                    <span className="text-sm opacity-70">(.jpg, .png)</span>
                   </div>
                 )}
               </div>
-              <div className="product-selection">
-                <label htmlFor="productCode">Mã sản phẩm:</label>
+              <div className="product-selection space-y-2">
+                <label htmlFor="productCode" className="text-sm font-medium text-gray-700">Mã sản phẩm:</label>
                 <input
                   type="text"
                   id="productCode"
@@ -453,6 +443,7 @@ const App: React.FC = () => {
                   onChange={(e) => setProductCode(e.target.value)}
                   placeholder="Nhập mã sản phẩm..."
                   list="productList"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all duration-300"
                 />
                 <datalist id="productList">
                   {PRODUCTS.map((product, index) => (
@@ -460,58 +451,98 @@ const App: React.FC = () => {
                   ))}
                 </datalist>
                 {productCode && PRODUCT_IMAGE_MAP[productCode] && (
-                  <div className="product-preview">
-                    <img src={PRODUCT_IMAGE_MAP[productCode]} alt="Product Preview" className="product-image" />
+                  <div className="product-preview mt-2">
+                    <img
+                      src={PRODUCT_IMAGE_MAP[productCode]}
+                      alt="Product Preview"
+                      className="w-full h-32 object-cover rounded-xl border-2 border-gray-100 shadow-md hover:shadow-lg transition-shadow duration-300"
+                    />
                   </div>
                 )}
               </div>
               <button
-                className="generate-button"
+                className="w-full px-6 py-3 bg-gradient-to-r from-indigo-600 to-blue-500 text-white rounded-xl shadow-md hover:from-indigo-700 hover:to-blue-600 focus:outline-none focus:ring-2 focus:ring-indigo-400 font-semibold transition-all duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed"
                 onClick={processImg2Img}
                 disabled={loading || !uploadedImage || !maskedImageUrl || !productCode}
               >
                 {loading ? 'Đang xử lý...' : 'Tạo ảnh'}
               </button>
             </div>
-            <div className="output-area">
+            <div className="output-area flex flex-col items-center justify-center space-y-6">
               {error ? (
-                <div className="error-message">
+                <div className="error-message bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-xl shadow-md text-center w-full max-w-md">
                   <strong>Lỗi!</strong> {error}
                 </div>
               ) : loading ? (
-                <div className="loading-container">
-                  <div className="spinner">
-                    <div></div>
+                <div className="loading-container bg-white/80 rounded-xl p-6 shadow-lg w-full max-w-md">
+                  <div className="spinner flex justify-center">
+                    <div className="w-12 h-12 border-4 border-t-indigo-600 border-b-transparent rounded-full animate-spin"></div>
                   </div>
-                  <div className="progress-bar">
-                    <div className="progress-bar-fill" style={{ width: `${progress}%` }}></div>
+                  <div className="progress-bar w-full h-2 bg-gray-200 rounded-full mt-4 overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-indigo-600 to-blue-500 transition-all duration-500"
+                      style={{ width: `${progress}%` }}
+                    ></div>
                   </div>
-                  <p className="loading-text quote-text">{quotes[currentQuote]}</p>
-                  <p className="loading-text estimated-time">Thời gian chờ dự kiến: 1-2 phút</p>
+                  <p className="loading-text text-gray-600 text-center mt-3 font-medium animate-fade-in">{quotes[currentQuote]}</p>
+                  <p className="loading-text text-gray-500 text-sm text-center">Thời gian chờ: ~1-2 phút</p>
                 </div>
               ) : generatedImages.length > 0 ? (
-                <div className="generated-images-container">
+                <div className="generated-images-container grid grid-cols-1 gap-6 w-full">
                   {generatedImages.map((imageUrl, index) => (
-                    <div key={index} className="generated-image-wrapper" onClick={() => openModal(imageUrl)}>
-                      <img src={imageUrl} alt={`Generated ${index + 1}`} className="generated-image" />
+                    <div
+                      key={index}
+                      className="generated-image-wrapper relative overflow-hidden rounded-xl shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer"
+                      onClick={() => openModal(imageUrl)}
+                    >
+                      <img
+                        src={imageUrl}
+                        alt={`Generated ${index + 1}`}
+                        className="w-full h-auto rounded-xl object-cover transform hover:scale-105 transition-transform duration-300"
+                      />
                       <a
                         href={imageUrl}
                         download={`generated_image_${index + 1}.png`}
-                        className="download-button"
+                        className="absolute bottom-2 right-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-all duration-300"
                         onClick={e => e.stopPropagation()}
                       >
-                        Tải ảnh {index + 1} về máy
+                        Tải ảnh {index + 1}
                       </a>
                     </div>
                   ))}
                 </div>
               ) : maskedImageUrl ? (
-                <div className="flex flex-col items-center space-y-2">
-                  <h3 className="text-xl font-semibold text-gray-700">Masked Image</h3>
-                  <img src={maskedImageUrl} alt="Masked" className="rounded-xl shadow-md border border-gray-300" style={{ maxWidth: '500px' }} />
+                <div className="flex flex-col items-center space-y-4 w-full max-w-md">
+                  <h3 className="text-xl font-semibold text-gray-800">Kết quả Mask</h3>
+                  <div className="relative w-full">
+                    <img
+                      src={maskedImageUrl}
+                      alt="Masked"
+                      className="w-full h-auto rounded-xl border-2 border-gradient-to-br from-indigo-100 to-blue-100 shadow-lg hover:shadow-xl transition-shadow duration-300"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-transparent to-gray-900/10 rounded-xl opacity-0 hover:opacity-20 transition-opacity duration-300 flex items-center justify-center">
+                      <span className="text-white text-sm font-medium">Nhấp để xem chi tiết</span>
+                    </div>
+                  </div>
                 </div>
               ) : (
-                <div className="output-placeholder">Ảnh sẽ hiển thị ở đây sau khi tạo</div>
+                <div className="output-placeholder bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-dashed border-indigo-200 rounded-xl p-8 text-gray-500 text-center w-full max-w-md hover:border-indigo-400 transition-all duration-300">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth="1.5"
+                    stroke="currentColor"
+                    className="w-12 h-12 text-indigo-500 mx-auto"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.125-8.419m11.25 8.419a4.5 4.5 0 00-1.124-8.419"
+                    />
+                  </svg>
+                  <span className="text-lg font-medium mt-2 block">Ảnh sẽ hiển thị ở đây</span>
+                </div>
               )}
             </div>
           </div>
@@ -519,9 +550,11 @@ const App: React.FC = () => {
         </div>
       </div>
       {isModalOpen && (
-        <div className="image-modal" onClick={closeModal}>
-          <span className="close-modal">×</span>
-          <img src={modalImage} alt="Full size" onClick={e => e.stopPropagation()} />
+        <div className="image-modal fixed inset-0 bg-black/80 flex items-center justify-center z-50" onClick={closeModal}>
+          <span className="close-modal absolute top-6 right-6 text-white text-3xl cursor-pointer bg-gray-800/50 rounded-full p-2 hover:bg-gray-700 transition-all duration-300" onClick={closeModal}>
+            &times;
+          </span>
+          <img src={modalImage} alt="Full size" className="max-w-4xl max-h-[90vh] rounded-xl shadow-2xl transform hover:scale-105 transition-transform duration-300" onClick={e => e.stopPropagation()} />
         </div>
       )}
     </div>
